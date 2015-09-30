@@ -11,7 +11,7 @@ namespace Elysian_Fields
 {
     class Engine
     {
-        Draw draw;
+        DrawEngine draw;
         Map map;
 
         private int MapWidth = int.Parse(ConfigurationManager.AppSettings["MapWidth"]);
@@ -52,7 +52,7 @@ namespace Elysian_Fields
 
         public Engine(int difficulty, bool viewHighscore)
         {
-            draw = new Draw();
+            draw = new DrawEngine();
             map = new Map(draw, int.Parse(ConfigurationManager.AppSettings["SuperPowerStepsPerFood"]), bool.Parse(ConfigurationManager.AppSettings["FriendlyFire"]));
 
             Difficulty = difficulty;

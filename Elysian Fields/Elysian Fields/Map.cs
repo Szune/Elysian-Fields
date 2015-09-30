@@ -15,7 +15,7 @@ namespace Elysian_Fields
         public List<Player> Players = new List<Player>();
         public List<Entity> Food = new List<Entity>();
 
-        private Draw draw;
+        private DrawEngine draw;
 
         public int CreatureCount;
 
@@ -31,11 +31,11 @@ namespace Elysian_Fields
 
         public Map(Coordinates WindowSize) { windowSize = WindowSize; }
 
-        public Map(Draw drawEngine, int SuperPowerStepsPerFood, bool friendlyFire)
+        public Map(DrawEngine drawEngine, int SuperPowerStepsPerFood, bool friendlyFire)
         {
             draw = drawEngine;
             //Creatures.Add(new Creature("P", new Coordinates(0, 0), 1, ConsoleColor.Green, 1)); <- old way of doing it
-            Players.Add(new Player("P", new Coordinates(0, 0), ConsoleColor.Green, 1, 1));
+            //Players.Add(new Player("P", new Coordinates(0, 0), ConsoleColor.Green, 1, 1));
 
             /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
             if (bool.Parse(ConfigurationManager.AppSettings["PlayerDebug"])) { Players[0].SuperPowerSteps = 15000; }
@@ -86,6 +86,16 @@ namespace Elysian_Fields
                     MoveCreature(Creatures[i], Creatures[i].NextStep());
                 }
             }
+        }
+
+        public void MovePlayer()
+        {
+/* TODO: Add multiplayer functionality and change Players[0] to a variable */
+
+                if (Players[0].Health > 0 && Players[0].hasPath())
+                {
+                    MoveCreature(Players[0], Players[0].NextStep());
+                }
         }
 
         public void MoveCreature(Entity creature, Coordinates step)
@@ -143,16 +153,24 @@ namespace Elysian_Fields
             }
         }
 
-        public bool PlayerAttack(Player player, Creature target)
+        public int PlayerAttack(Player player)
         {
-            if (player.SuperPowerSteps > 0 && CanAttack(player, target))
+
+            if (player.TargetID != -1)
             {
-                target.Die();
-                draw.MoveObject(player, target.Position);
-                player.Experience += 1 + target.Experience;
-                return true;
+                Creature target = GetCreatureByID(player.TargetID);
+                if (target.Name != "null")
+                {
+                    if (CanAttack(player, target) && DistanceToDiagonal(player.Position, target.Position) < 46) // < 46 because when standing diagonal, the distance is 45, when standing directly in front, it is 32
+                    {
+                        target.Die();
+                        player.Experience += 1 + target.Experience;
+                        player.TargetID = -1;
+                        return 1;
+                    }
+                }
             }
-            return false;
+            return 0;
         }
 
         public bool CreatureAttack(Creature creature, Player target)
@@ -223,16 +241,48 @@ namespace Elysian_Fields
             return (int)Math.Sqrt(Math.Pow((Source.X - Destination.X), 2) + Math.Pow(Source.Y - Destination.Y, 2));
         }
 
-        public bool IsTileWalkable(Coordinates Tile)
+        public int GetTileIDFromTile(Coordinates Tile)
         {
-            bool tileWalkable = true;
+            int TileID = -1;
             for (int i = 0; i < Tiles.Count; i++)
             {
                 if (SamePosition(Tile, Tiles[i].Position))
                 {
-                    tileWalkable = false;
+                    TileID = Tiles[i].ID;
                     break;
                 }
+            }
+            return TileID;
+        }
+
+        public Tile GetTileByID(int ID)
+        {
+            int TileID = -1;
+            for (int i = 0; i < Tiles.Count; i++)
+            {
+                if (Tiles[i].ID == ID)
+                {
+                    TileID = i;
+                    break;
+                }
+            }
+
+            if(TileID == -1)
+            {
+                return new Tile("null");
+            }
+
+            return Tiles[TileID];
+        }
+
+        public bool IsTileWalkable(Coordinates Tile)
+        {
+            bool tileWalkable = true;
+
+            int TileID = GetTileIDFromTile(Tile);
+            if (TileID != -1) /* TODO: When map is finished, IsTileWalkable() should return false; if TileID == -1 (it should not be possible to walk where there is no sprite)*/
+            {
+                tileWalkable = GetTileByID(TileID).Walkable;
             }
 
             if (tileWalkable) { tileWalkable = !IsTilePlayer(Tile); }

@@ -12,19 +12,19 @@ namespace Elysian_Fields
         {
 
         }
-        public Player(string name, Coordinates coordinates, ConsoleColor color = ConsoleColor.White, int health = 1, int id = 0)
+        public Player(string name, Coordinates coordinates, int health = 1, int id = 0)
         {
             /* Spelare */
             Name = name;
             Position = coordinates;
             SpawnPosition = coordinates;
-            Color = color;
             MaxHealth = health;
             Health = health;
             ID = id;
             SuperPowerSteps = 0;
             Visible = true;
             EntityType = Entity.PlayerEntity;
+            TargetID = -1;
         }
     }
 }

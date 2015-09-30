@@ -2,17 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Elysian_Fields
 {
-    class Draw
+    class DrawEngine
     {
         public Entity emptyTile = new Entity(" ");
 
         private int OffsetX = 16;
         private int OffsetY = 2;
 
-        public Draw() { }
+        public List<SpriteObject> spriteList = new List<SpriteObject>();
+
+        public DrawEngine() { }
 
         public void MoveObject(Entity Object, Coordinates Destination)
         {

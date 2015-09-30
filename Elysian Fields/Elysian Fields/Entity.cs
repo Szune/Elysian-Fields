@@ -14,7 +14,7 @@ namespace Elysian_Fields
 
         public Coordinates Position { get; set; }
 
-        public Texture2D Sprite { get; set; }
+        public int SpriteID { get; set; }
 
         public int EntityType { get; set; }
 

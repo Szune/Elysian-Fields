@@ -12,7 +12,7 @@ namespace Elysian_Fields
 
         private int G = int.Parse(ConfigurationManager.AppSettings["G"]);
 
-        private Draw draw = new Draw();
+        private DrawEngine draw = new DrawEngine();
 
         public AI() { }
 
