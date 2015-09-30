@@ -131,22 +131,24 @@ namespace Elysian_Fields
 
             if (gameTime.TotalGameTime.TotalMilliseconds - TimeOfLastMovement > 250)
             {
-
-                if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                if (this.IsActive)
                 {
-                    mostRecentKey = Keys.Right;
-                }
-                else if (Keyboard.GetState().IsKeyDown(Keys.Left))
-                {
-                    mostRecentKey = Keys.Left;
-                }
-                else if (Keyboard.GetState().IsKeyDown(Keys.Up))
-                {
-                    mostRecentKey = Keys.Up;
-                }
-                else if (Keyboard.GetState().IsKeyDown(Keys.Down))
-                {
-                    mostRecentKey = Keys.Down;
+                    if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                    {
+                        mostRecentKey = Keys.Right;
+                    }
+                    else if (Keyboard.GetState().IsKeyDown(Keys.Left))
+                    {
+                        mostRecentKey = Keys.Left;
+                    }
+                    else if (Keyboard.GetState().IsKeyDown(Keys.Up))
+                    {
+                        mostRecentKey = Keys.Up;
+                    }
+                    else if (Keyboard.GetState().IsKeyDown(Keys.Down))
+                    {
+                        mostRecentKey = Keys.Down;
+                    }
                 }
 
                 if (!Walking && mostRecentKey != lastPressedKey)
@@ -220,20 +222,23 @@ namespace Elysian_Fields
                 RightClicked = false;
             }
 
-            if (Mouse.GetState().RightButton == ButtonState.Pressed && !RightClicked)
+            if (this.IsActive)
             {
-                int x = Mouse.GetState().X, y = Mouse.GetState().Y;
-                int creatureID = GetCreatureByMousePosition(x, y).ID;
-                if (map.Players[0].TargetID == creatureID)
+                if (Mouse.GetState().RightButton == ButtonState.Pressed && !RightClicked)
                 {
-                    map.Players[0].TargetID = -1;
+                    int x = Mouse.GetState().X, y = Mouse.GetState().Y;
+                    int creatureID = GetCreatureByMousePosition(x, y).ID;
+                    if (map.Players[0].TargetID == creatureID)
+                    {
+                        map.Players[0].TargetID = -1;
+                    }
+                    else
+                    {
+                        map.Players[0].TargetID = creatureID;
+                    }
+                    // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();
+                    RightClicked = true;
                 }
-                else
-                {
-                    map.Players[0].TargetID = creatureID;
-                }
-                // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();
-                RightClicked = true;
             }
 
             if (Mouse.GetState().LeftButton == ButtonState.Released && LeftClicked)
@@ -241,19 +246,22 @@ namespace Elysian_Fields
                 LeftClicked = false;
             }
 
-            if (Mouse.GetState().LeftButton == ButtonState.Pressed && !LeftClicked)
+            if (this.IsActive)
             {
-                int mx = Mouse.GetState().X, my = Mouse.GetState().Y;
-                int x = (mx / 32) * 32;
-                int y = (my / 32) * 32;
-                Coordinates target = new Coordinates(x, y);
-                if(map.IsTileWalkable(target))
+                if (Mouse.GetState().LeftButton == ButtonState.Pressed && !LeftClicked)
                 {
-                    map.GeneratePathFromCreature(map.Players[0], target);
+                    int mx = Mouse.GetState().X, my = Mouse.GetState().Y;
+                    int x = (mx / 32) * 32;
+                    int y = (my / 32) * 32;
+                    Coordinates target = new Coordinates(x, y);
+                    if (map.IsTileWalkable(target))
+                    {
+                        map.GeneratePathFromCreature(map.Players[0], target);
+                    }
+                    // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();*/
+                    // For debug purposes: Window.Title = x.ToString() + " " + y.ToString();
+                    LeftClicked = true;
                 }
-                // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();*/
-                // For debug purposes: Window.Title = x.ToString() + " " + y.ToString();
-                LeftClicked = true;
             }
 
             if (gameTime.TotalGameTime.Milliseconds % 250 == 0)
