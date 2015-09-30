@@ -471,7 +471,7 @@ namespace Elysian_Fields
             for (int i = 0; i < amount; i++)
             {
                 SpawnCoordinates = FindEmptyTile(MapWidth, MapHeight);
-                map.Food.Add(new Item("!", SpawnCoordinates, ConsoleColor.Yellow, 1));
+                //map.Food.Add(new Item("!", SpawnCoordinates, ConsoleColor.Yellow, 1));
             }
         }
 

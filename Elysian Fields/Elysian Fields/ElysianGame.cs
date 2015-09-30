@@ -16,8 +16,18 @@ namespace Elysian_Fields
         SpriteBatch spriteBatch;
         Map map;
         List<SpriteObject> spriteList = new List<SpriteObject>();
+        List<UI> listUI = new List<UI>();
+        List<SpriteObject> MouseCursors = new List<SpriteObject>();
+        Item dragItem = new Item();
+
+        private int currentMouse = 0;
+
+        SpriteFont font;
+
         private bool RightClicked = false;
         private bool LeftClicked = false;
+
+        private int leftClickTime;
 
         private const int Direction_North = 1;
         private const int Direction_East = 2;
@@ -62,7 +72,7 @@ namespace Elysian_Fields
                 map.Creatures.Add(new Creature("Ghost" + i.ToString(), new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, System.ConsoleColor.White, 1, i + 1));
             }
 
-            this.IsMouseVisible = true;
+            //this.IsMouseVisible = true;
 
             base.Initialize();
 
@@ -84,6 +94,13 @@ namespace Elysian_Fields
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\attackbox"), spriteList.Count + 1, Entity.UnknownEntity));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\tile2"), spriteList.Count + 1, Entity.TileEntity));
 
+            map.Items.Add(new Item("Sword of magicnezz", new Coordinates(13 * Coordinates.Step, 13 * Coordinates.Step), 1, 0, 60));
+
+            listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 25, Coordinates.Step * 0), "LHand"));
+
+            MouseCursors.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\MouseRegular"), 1, Entity.UnknownEntity));
+            MouseCursors.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\MouseDrag"), 2, Entity.UnknownEntity));
+
             map.Players[0].SpriteID = 1;
             
             for(int i = 0; i < map.Creatures.Count; i++)
@@ -98,8 +115,9 @@ namespace Elysian_Fields
 
             map.LoadMap("Content\\fields.map");
 
-            Window.Title = "Elysian Fields";
+            font = Content.Load<SpriteFont>("EFont");
 
+            Window.Title = "Elysian Fields";
             // TODO: use this.Content to load your game content here
         }
 
@@ -237,30 +255,73 @@ namespace Elysian_Fields
                         map.Players[0].TargetID = creatureID;
                     }
                     // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();
+                    // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();
                     RightClicked = true;
                 }
             }
 
             if (Mouse.GetState().LeftButton == ButtonState.Released && LeftClicked)
             {
-                LeftClicked = false;
-            }
-
-            if (this.IsActive)
-            {
-                if (Mouse.GetState().LeftButton == ButtonState.Pressed && !LeftClicked)
+                int mx = Mouse.GetState().X, my = Mouse.GetState().Y;
+                int x = (mx / 32) * 32;
+                int y = (my / 32) * 32;
+                Coordinates target = new Coordinates(x, y);
+                if (gameTime.TotalGameTime.TotalMilliseconds - leftClickTime < 200)
                 {
-                    int mx = Mouse.GetState().X, my = Mouse.GetState().Y;
-                    int x = (mx / 32) * 32;
-                    int y = (my / 32) * 32;
-                    Coordinates target = new Coordinates(x, y);
                     if (map.IsTileWalkable(target))
                     {
                         map.GeneratePathFromCreature(map.Players[0], target);
                     }
-                    // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();*/
-                    // For debug purposes: Window.Title = x.ToString() + " " + y.ToString();
-                    LeftClicked = true;
+                }
+                else
+                {
+                    if(dragItem.ID != -1)
+                    {
+                        UI equipment = GetListUIByMousePosition(x, y);
+                        if (equipment.ID == -1)
+                        {
+                            equipment = GetListUIByMousePosition(dragItem.Position.X, dragItem.Position.Y);
+                            if(equipment.ID == -1)
+                            { 
+                                map.DragItem(dragItem, target);
+                            }
+                            else
+                            {
+                                map.UnequipItem(dragItem, equipment, target);
+                            }
+                        }
+                        else
+                        {
+                            map.EquipItem(dragItem, equipment);
+                        }
+                    }
+                }
+                // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();*/
+                // For debug purposes: Window.Title = x.ToString() + " " + y.ToString();
+                LeftClicked = false;
+                currentMouse = 0;
+            }
+
+            if (this.IsActive)
+            {
+                if (Mouse.GetState().LeftButton == ButtonState.Pressed)
+                {
+                    if (!LeftClicked)
+                    {
+                        int mx = Mouse.GetState().X, my = Mouse.GetState().Y;
+                        int x = (mx / 32) * 32;
+                        int y = (my / 32) * 32;
+                        leftClickTime = (int) gameTime.TotalGameTime.TotalMilliseconds;
+                        dragItem = GetItemByMousePosition(x, y);
+                        LeftClicked = true;
+                    }
+                    else
+                    {
+                        if(gameTime.TotalGameTime.TotalMilliseconds - leftClickTime > 200)
+                        {
+                            currentMouse = 1;
+                        }
+                    }
                 }
             }
 
@@ -271,7 +332,7 @@ namespace Elysian_Fields
 
             if (gameTime.TotalGameTime.Milliseconds % 1000 == 0)
             {
-                //map.GeneratePaths();
+                map.GeneratePaths();// <- Remove this to make monsters move
                 map.PlayerAttack(map.Players[0]).ToString();
             }
 
@@ -284,8 +345,8 @@ namespace Elysian_Fields
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            SpriteFont font;
-            font = Content.Load<SpriteFont>("EFont");
+
+            Vector2 cursorPos = Mouse.GetState().Position.ToVector2();
            
             GraphicsDevice.Clear(Color.ForestGreen);
 
@@ -294,9 +355,16 @@ namespace Elysian_Fields
 
             spriteBatch.Begin();
 
+            DrawUI();
+
             for (int i = 0; i < map.Tiles.Count; i++)
             {
                 spriteBatch.Draw(GetSpriteByID(map.Tiles[i].SpriteID), new Vector2((float)map.Tiles[i].Position.X, (float)map.Tiles[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
+
+            for(int i = 0; i < map.Items.Count; i++)
+            {
+                spriteBatch.Draw(GetSpriteByID(map.Items[i].SpriteID), new Vector2((float)map.Items[i].Position.X, (float)map.Items[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             }
 
             spriteBatch.Draw(GetSpriteByID(map.Players[0].SpriteID), new Vector2((float)map.Players[0].Position.X, (float)map.Players[0].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
@@ -316,12 +384,24 @@ namespace Elysian_Fields
             }
 
 
-            spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)0, (float)736), Color.Black);
-            spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)0, (float)726), Color.Black);
+
+            spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)Coordinates.Step * 25, (float)Coordinates.Step), Color.Black);
+            spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)Coordinates.Step * 25, (float)Coordinates.Step * 2), Color.Black);
+            spriteBatch.DrawString(font, "Strength: " + map.Players[0].LeftHand.Strength, new Vector2((float)Coordinates.Step * 25, (float)Coordinates.Step * 3), Color.Black);
+
+            spriteBatch.Draw(MouseCursors[currentMouse].Sprite, cursorPos, Color.White);
 
             spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        public void DrawUI()
+        {
+            for (int i = 0; i < listUI.Count; i++)
+            {
+                spriteBatch.Draw(listUI[i].Sprite, new Vector2((float)listUI[i].Position.X, (float)listUI[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
         }
 
         public Texture2D GetSpriteByID(int ID)
@@ -346,12 +426,46 @@ namespace Elysian_Fields
             {
                 tmpRect.X = map.Creatures[i].Position.X;
                 tmpRect.Y = map.Creatures[i].Position.Y;
-                if (tmpRect.Contains(x, y))
+                if (tmpRect.Contains(x, y) && map.Creatures[i].Health > 0)
                 {
                     return map.Creatures[i];
                 }
             }
             return new Creature("null");
+        }
+
+        private Item GetItemByMousePosition(int x, int y)
+        {
+            Rectangle tmpRect;
+            tmpRect.Height = 32;
+            tmpRect.Width = 32;
+            for (int i = 0; i < map.Items.Count; i++)
+            {
+                tmpRect.X = map.Items[i].Position.X;
+                tmpRect.Y = map.Items[i].Position.Y;
+                if (tmpRect.Contains(x, y))
+                {
+                    return map.Items[i];
+                }
+            }
+            return new Item();
+        }
+
+        private UI GetListUIByMousePosition(int x, int y)
+        {
+            Rectangle tmpRect;
+            tmpRect.Height = 32;
+            tmpRect.Width = 32;
+            for (int i = 0; i < listUI.Count; i++)
+            {
+                tmpRect.X = listUI[i].Position.X;
+                tmpRect.Y = listUI[i].Position.Y;
+                if (tmpRect.Contains(x, y))
+                {
+                    return listUI[i];
+                }
+            }
+            return new UI();
         }
     }
 }

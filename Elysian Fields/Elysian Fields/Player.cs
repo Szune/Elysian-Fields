@@ -7,7 +7,7 @@ namespace Elysian_Fields
 {
     class Player : Creature
     {
-
+        public Item LeftHand = new Item();
         public Player()
         {
 

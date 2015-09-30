@@ -15,6 +15,7 @@ namespace Elysian_Fields
         public List<Creature> Creatures = new List<Creature>();
         public List<Player> Players = new List<Player>();
         public List<Entity> Food = new List<Entity>();
+        public List<Item> Items = new List<Item>();
 
         private DrawEngine draw;
 
@@ -314,6 +315,39 @@ namespace Elysian_Fields
             }
 
             return Tiles[TileID];
+        }
+        
+        public void DragItem(Item item, Coordinates Tile)
+        {
+            bool tileThrowable = true;
+
+            int TileID = GetTileIDFromTile(Tile);
+            if (TileID != -1) /* TODO: When map is finished, IsTileWalkable() should return false; if TileID == -1 (it should not be possible to walk where there is no sprite)*/
+            {
+                tileThrowable = GetTileByID(TileID).Walkable;
+            }
+            if (tileThrowable)
+            {
+                item.Position = new Coordinates(Tile.X, Tile.Y);
+            }
+        }
+
+        public void EquipItem(Item item, UI equipment)
+        {
+            item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
+            if (equipment.Name == "LHand")
+            {
+                Players[0].LeftHand = item;
+            }
+        }
+
+        public void UnequipItem(Item item, UI equipment, Coordinates target)
+        {
+            item.Position = new Coordinates(target.X, target.Y);
+            if (equipment.Name == "LHand")
+            {
+                Players[0].LeftHand = new Item();
+            }
         }
 
         public bool IsTileWalkable(Coordinates Tile)
