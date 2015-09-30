@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
+using System.Configuration;
 
 namespace Elysian_Fields
 {
@@ -21,6 +22,10 @@ namespace Elysian_Fields
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+
+            graphics.PreferredBackBufferWidth = int.Parse(ConfigurationManager.AppSettings["ClientWidth"]);
+            graphics.PreferredBackBufferHeight = int.Parse(ConfigurationManager.AppSettings["ClientHeight"]);
+            graphics.ApplyChanges();
         }
 
         /// <summary>
@@ -39,9 +44,10 @@ namespace Elysian_Fields
 
             for(int i = 0; i < 5; i++)
             {
-                map.Creatures.Add(new Creature("Ghost" + i.ToString(), new Coordinates(64 + i * 32, 0), map.Players[0].ID, System.ConsoleColor.White, 1, i + 1));
+                map.Creatures.Add(new Creature("Ghost" + i.ToString(), new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, System.ConsoleColor.White, 1, i + 1));
             }
             base.Initialize();
+
         }
 
         /// <summary>
@@ -90,31 +96,31 @@ namespace Elysian_Fields
             {
                 if (Keyboard.GetState().IsKeyDown(Keys.Right))
                 {
-                    map.Players[0].Position = new Coordinates(map.Players[0].Position.X + 32, map.Players[0].Position.Y);
+                    map.MoveCreature(map.Players[0], new Coordinates(map.Players[0].Position.X + Coordinates.Step, map.Players[0].Position.Y));
                 }
 
                 if (Keyboard.GetState().IsKeyDown(Keys.Left))
                 {
-                    map.Players[0].Position = new Coordinates(map.Players[0].Position.X - 32, map.Players[0].Position.Y);
+                    map.MoveCreature(map.Players[0], new Coordinates(map.Players[0].Position.X - Coordinates.Step, map.Players[0].Position.Y));
                 }
 
                 if (Keyboard.GetState().IsKeyDown(Keys.Down))
                 {
-                    map.Players[0].Position = new Coordinates(map.Players[0].Position.X, map.Players[0].Position.Y + 32);
+                    map.MoveCreature(map.Players[0], new Coordinates(map.Players[0].Position.X, map.Players[0].Position.Y + Coordinates.Step));
                 }
 
                 if (Keyboard.GetState().IsKeyDown(Keys.Up))
                 {
-                    map.Players[0].Position = new Coordinates(map.Players[0].Position.X, map.Players[0].Position.Y - 32);
+                    map.MoveCreature(map.Players[0], new Coordinates(map.Players[0].Position.X, map.Players[0].Position.Y - Coordinates.Step));
                 }
 
-                //map.MoveCreatures();
+                map.MoveCreatures();
 
             }
 
             if (gameTime.TotalGameTime.Milliseconds % 1000 == 0)
             {
-                //map.GeneratePaths();
+                map.GeneratePaths();
             }
 
                 base.Update(gameTime);
@@ -136,11 +142,11 @@ namespace Elysian_Fields
             spriteBatch.Begin();
 
             spriteBatch.Draw(map.Players[0].Sprite, new Vector2((float)map.Players[0].Position.X, (float)map.Players[0].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
-            spriteBatch.DrawString(font, map.Players[0].Name, new Vector2((float)map.Players[0].Position.X, (float)map.Players[0].Position.Y + 32), Color.Black);
+            spriteBatch.DrawString(font, map.Players[0].Name, new Vector2((float)map.Players[0].Position.X, (float)map.Players[0].Position.Y + Coordinates.Step), Color.Black);
             for (int i = 0; i < map.Creatures.Count; i++)
             {
                 spriteBatch.Draw(map.Creatures[i].Sprite, new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
-                spriteBatch.DrawString(font, map.Creatures[i].Name, new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y + 32), Color.Black);
+                spriteBatch.DrawString(font, map.Creatures[i].Name, new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y + Coordinates.Step), Color.Black);
             }
             
 

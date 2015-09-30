@@ -65,7 +65,11 @@ namespace Elysian_Fields
                             /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
                             GeneratePathFromCreature(Creatures[i], Players[0].Position);
                             Coordinates next = Creatures[i].NextStep();
-                            Creatures[i].Position = new Coordinates(next.X, next.Y);
+                            if (next != null)
+                            {
+                                Creatures[i].Position = new Coordinates(next.X, next.Y);
+                            }
+                            //Creatures[i].Position = new Coordinates(next.X * Coordinates.Step, next.Y * Coordinates.Step);
                             //draw.MoveObject(Creatures[i], Creatures[i].NextStep());
                         }
                     }
@@ -86,9 +90,8 @@ namespace Elysian_Fields
 
         public void MoveCreature(Entity creature, Coordinates step)
         {
-            if (IsTileWalkable(step) && DistanceTo(creature.Position, step) == 1)
+            if (IsTileWalkable(step) && DistanceTo(creature.Position, step) == Coordinates.Step)
             {
-                //draw.MoveObject(creature, step);
                 creature.Position = new Coordinates(step.X, step.Y);
             }
             //else

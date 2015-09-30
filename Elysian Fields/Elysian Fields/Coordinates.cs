@@ -13,6 +13,8 @@ namespace Elysian_Fields
         public int G { get; set; } // keep track of movement cost
         public int F { get; set; } // H + G (total movement cost)
 
+        public const int Step = 32;
+
         public Coordinates Parent { get; set; }
 
         public Coordinates() { }

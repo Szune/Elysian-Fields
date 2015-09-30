@@ -43,7 +43,7 @@ namespace Elysian_Fields
                 Parent = LowestFScore(OpenList);
                 if (bool.Parse(ConfigurationManager.AppSettings["DebugMode"]))
                 {
-                    draw.DrawObject(new Entity("F", new Coordinates(Parent.X, Parent.Y)));   // Endast för debugging
+                    //draw.DrawObject(new Entity("F", new Coordinates(Parent.X, Parent.Y)));   // Endast för debugging
                 }
                 OpenList.Remove(Parent);
                 ClosedList.Add(Parent);
@@ -79,23 +79,23 @@ namespace Elysian_Fields
         {
             List<Coordinates> WalkableSquares = new List<Coordinates>();
             
-            Coordinates CheckingSquare = new Coordinates(Square.X + 1, Square.Y); // East
+            Coordinates CheckingSquare = new Coordinates(Square.X + Coordinates.Step, Square.Y); // East
             if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination))
             {
                 WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
             }
             
-            CheckingSquare = new Coordinates(Square.X - 1, Square.Y); // West
+            CheckingSquare = new Coordinates(Square.X - Coordinates.Step, Square.Y); // West
             if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination)) {
                 WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
             }
 
-            CheckingSquare = new Coordinates(Square.X, Square.Y - 1); // North
+            CheckingSquare = new Coordinates(Square.X, Square.Y - Coordinates.Step); // North
             if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination)) {
                 WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
             }
 
-            CheckingSquare = new Coordinates(Square.X, Square.Y + 1); // South
+            CheckingSquare = new Coordinates(Square.X, Square.Y + Coordinates.Step); // South
             if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination)) {
                 WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
             }
