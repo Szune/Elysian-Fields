@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Configuration;
+using Microsoft.Xna;
 
 namespace Elysian_Fields
 {
@@ -24,7 +25,11 @@ namespace Elysian_Fields
 
         private Random Generator = new Random();
 
+        private Coordinates windowSize;
+
         public Map() { }
+
+        public Map(Coordinates WindowSize) { windowSize = WindowSize; }
 
         public Map(Draw drawEngine, int SuperPowerStepsPerFood, bool friendlyFire)
         {
@@ -33,7 +38,6 @@ namespace Elysian_Fields
             Players.Add(new Player("P", new Coordinates(0, 0), ConsoleColor.Green, 1, 1));
 
             /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
-
             if (bool.Parse(ConfigurationManager.AppSettings["PlayerDebug"])) { Players[0].SuperPowerSteps = 15000; }
 
             AddSuperPowerSteps = SuperPowerStepsPerFood;
@@ -60,7 +64,9 @@ namespace Elysian_Fields
                         {
                             /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
                             GeneratePathFromCreature(Creatures[i], Players[0].Position);
-                            draw.MoveObject(Creatures[i], Creatures[i].NextStep());
+                            Coordinates next = Creatures[i].NextStep();
+                            Creatures[i].Position = new Coordinates(next.X, next.Y);
+                            //draw.MoveObject(Creatures[i], Creatures[i].NextStep());
                         }
                     }
                 }
@@ -82,33 +88,34 @@ namespace Elysian_Fields
         {
             if (IsTileWalkable(step) && DistanceTo(creature.Position, step) == 1)
             {
-                draw.MoveObject(creature, step);
+                //draw.MoveObject(creature, step);
+                creature.Position = new Coordinates(step.X, step.Y);
             }
-            else
-            {
-                int EntityType = GetEntityTypeFromTile(step);
-                if(EntityType == Entity.CreatureEntity)
-                {
-                    /* TODO: Change Players[0] to a variable ID and add method to attack other players to allow for multiplayer */
-                    if (creature.EntityType == Entity.PlayerEntity)
-                    {
-                        Creature monster = GetCreatureByID(GetCreatureIDFromTile(step));
-                        PlayerAttack(Players[0], monster);
-                    }
-                }
-                else if(EntityType == Entity.PlayerEntity)
-                {
-                    if (creature.EntityType == Entity.CreatureEntity)
-                    {
-                        CreatureAttack(GetCreatureByID(creature.ID), Players[0]);
-                    }
-                }
-                else if (EntityType == Entity.ItemEntity)
-                {
-                    /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
-                    Eat(Players[0], step);
-                }
-            }
+            //else
+            //{
+            //    int EntityType = GetEntityTypeFromTile(step);
+            //    if (EntityType == Entity.CreatureEntity)
+            //    {
+            //        /* TODO: Change Players[0] to a variable ID and add method to attack other players to allow for multiplayer */
+            //        if (creature.EntityType == Entity.PlayerEntity)
+            //        {
+            //            Creature monster = GetCreatureByID(GetCreatureIDFromTile(step));
+            //            PlayerAttack(Players[0], monster);
+            //        }
+            //    }
+            //    else if (EntityType == Entity.PlayerEntity)
+            //    {
+            //        if (creature.EntityType == Entity.CreatureEntity)
+            //        {
+            //            CreatureAttack(GetCreatureByID(creature.ID), Players[0]);
+            //        }
+            //    }
+            //    else if (EntityType == Entity.ItemEntity)
+            //    {
+            //        /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
+            //        Eat(Players[0], step);
+            //    }
+            //}
         }
 
         public bool AllDead()
@@ -340,7 +347,7 @@ namespace Elysian_Fields
 
         public bool OutOfBoundaries(Coordinates Coordinates)
         {
-            return !(Coordinates.X >= 0 && Coordinates.Y >= 0 && Coordinates.X < Console.WindowWidth && Coordinates.Y < Console.WindowHeight - 1);
+            return !(Coordinates.X >= 0 && Coordinates.Y >= 0 && Coordinates.X < windowSize.X && Coordinates.Y < windowSize.Y);
         }
 
 

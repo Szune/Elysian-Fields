@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Elysian_Fields
 {
@@ -12,6 +14,8 @@ namespace Elysian_Fields
 
         public Coordinates Position { get; set; }
 
+        public Texture2D Sprite { get; set; }
+
         public int EntityType { get; set; }
 
         public const int CreatureEntity = 1;
@@ -19,6 +23,8 @@ namespace Elysian_Fields
         public const int TileEntity = 3;
         public const int ItemEntity = 4;
         public const int UnknownEntity = 5;
+
+        
 
 
 
