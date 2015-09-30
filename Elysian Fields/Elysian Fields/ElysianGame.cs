@@ -85,16 +85,18 @@ namespace Elysian_Fields
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\tile2"), spriteList.Count + 1, Entity.TileEntity));
 
             map.Players[0].SpriteID = 1;
-
+            
             for(int i = 0; i < map.Creatures.Count; i++)
             {
                 map.Creatures[i].SpriteID = 1;
             }
 
-            map.Tiles.Add(new Tile("grass", 2, new Coordinates(Coordinates.Step * 4, Coordinates.Step * 2), 1, true));
+            /*map.Tiles.Add(new Tile("grass", 2, new Coordinates(Coordinates.Step * 4, Coordinates.Step * 2), 1, true));
             map.Tiles.Add(new Tile("grass", 4, new Coordinates(Coordinates.Step * 4, Coordinates.Step * 3), 2, true));
             map.Tiles.Add(new Tile("grass", 4, new Coordinates(Coordinates.Step * 4, Coordinates.Step * 4), 3, true));
-            map.Tiles.Add(new Tile("grass", 2, new Coordinates(Coordinates.Step * 4, Coordinates.Step * 5), 4, true));
+            map.Tiles.Add(new Tile("grass", 2, new Coordinates(Coordinates.Step * 4, Coordinates.Step * 5), 4, true));*/
+
+            map.LoadMap("Content\\fields.map");
 
             Window.Title = "Elysian Fields";
 

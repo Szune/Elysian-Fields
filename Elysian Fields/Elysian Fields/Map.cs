@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Configuration;
 using Microsoft.Xna;
+using System.IO;
 
 namespace Elysian_Fields
 {
@@ -50,6 +51,46 @@ namespace Elysian_Fields
             FromCreature.ResetPath();
             AI ai = new AI(this);
             FromCreature.Path = ai.PathTo(Target, FromCreature.Position);
+        }
+
+        public void LoadMap(string mapn) // Redan kommenterad i PacMan - MapEditor
+        {
+            /*int SpawnX = 0;
+            int SpawnY = 0;*/
+            FileInfo file = new FileInfo(mapn);
+
+            if (file.Exists)
+            {
+                StreamReader read = new StreamReader(mapn);
+
+                string[] coordinateList = read.ReadLine().Split(",".ToCharArray());
+
+                for (int i = 0; i < coordinateList.Length; i++)
+                {
+                    string[] Coordinates = coordinateList[i].Split("|".ToCharArray());
+                    int x = int.Parse(Coordinates[0]);
+                    int y = int.Parse(Coordinates[1]);
+                    int spriteID = int.Parse(Coordinates[2]);
+
+                    Tiles.Add(new Tile("grass", spriteID, new Coordinates(x, y), i, true));
+                }
+
+                /*
+                    TODO: Change Players[0] to a variable ID to allow for multiplayer
+                */
+
+                //coordinateList = read.ReadLine().Split("|".ToCharArray());
+                /*SpawnX = int.Parse(coordinateList[0]);
+                SpawnY = int.Parse(coordinateList[1]);
+                Players[0].Position = new Coordinates(SpawnX, SpawnY);
+                Players[0].SpawnPosition = new Coordinates(SpawnX, SpawnY);*/
+
+                read.Close();
+            }
+            else
+            {
+                Players[0].Name = "Couldn't load map";
+            }
         }
 
         public void GeneratePaths()
