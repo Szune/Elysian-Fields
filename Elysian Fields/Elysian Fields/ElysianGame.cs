@@ -19,6 +19,7 @@ namespace Elysian_Fields
         List<UI> listUI = new List<UI>();
         List<SpriteObject> MouseCursors = new List<SpriteObject>();
         Item dragItem = new Item();
+        Stack<DamageObject> dmgDone = new Stack<DamageObject>();
 
         private int currentMouse = 0;
 
@@ -28,6 +29,9 @@ namespace Elysian_Fields
         private bool LeftClicked = false;
 
         private int leftClickTime;
+
+        private int attackTime;
+        private int damageTime;
 
         private const int Direction_North = 1;
         private const int Direction_East = 2;
@@ -69,7 +73,7 @@ namespace Elysian_Fields
 
             for(int i = 0; i < 5; i++)
             {
-                map.Creatures.Add(new Creature("Ghost" + i.ToString(), new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, System.ConsoleColor.White, 1, i + 1));
+                map.Creatures.Add(new Creature("Ghost" + i.ToString(), new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, System.ConsoleColor.White, 100, i + 1));
             }
 
             //this.IsMouseVisible = true;
@@ -333,10 +337,21 @@ namespace Elysian_Fields
             if (gameTime.TotalGameTime.Milliseconds % 1000 == 0)
             {
                 map.GeneratePaths();// <- Remove this to make monsters move
-                map.PlayerAttack(map.Players[0]).ToString();
+            }
+            if (gameTime.TotalGameTime.TotalMilliseconds - attackTime > 1000)
+            {
+                if (map.CanAttack(map.Players[0], map.GetCreatureByID(map.Players[0].TargetID)))
+                {
+                    int dmgDealt = map.PlayerAttack(map.Players[0]);
+                    if (dmgDealt != -1)
+                    {
+                        dmgDone.Push(new DamageObject(map.GetCreatureByID(map.Players[0].TargetID), dmgDealt));
+                        attackTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                    }
+                }
             }
 
-                base.Update(gameTime);
+            base.Update(gameTime);
         }
 
         /// <summary>
@@ -375,19 +390,40 @@ namespace Elysian_Fields
                 {
                     spriteBatch.Draw(GetSpriteByID(map.Creatures[i].SpriteID), new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
                     spriteBatch.DrawString(font, map.Creatures[i].Name, new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y + Coordinates.Step), Color.Black);
+
+                    /* TODO: Draw all names on screen before drawing the monsters, that way their names won't block their friends' sprites */
                     if (map.Creatures[i].ID == map.Players[0].TargetID)
                     {
                         // Draw attackbox
                         spriteBatch.Draw(GetSpriteByID(3), new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+
+                        // Draw damage dealt
+                        if (dmgDone.Count > 0)
+                        {
+                            DamageObject dmgDealt = dmgDone.Peek();
+                            /*if (dmgDealt.creature.ID == map.Creatures[i].ID)
+                            {*/
+                                spriteBatch.DrawString(font, dmgDealt.damageDealt.ToString(), new Vector2((float)map.Creatures[i].Position.X + 5, (float)map.Creatures[i].Position.Y + 5), Color.Red);
+                                //damageTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                            //}
+                        }
+
+                        if (gameTime.TotalGameTime.TotalMilliseconds - attackTime > 750)
+                        {
+                            if (dmgDone.Count > 0 && map.Players[0].TargetID != -1)
+                            {
+                                dmgDone.Pop();
+                                //damageTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                            }
+                        }
                     }
                 }
             }
 
 
-
             spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)Coordinates.Step * 25, (float)Coordinates.Step), Color.Black);
             spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)Coordinates.Step * 25, (float)Coordinates.Step * 2), Color.Black);
-            spriteBatch.DrawString(font, "Strength: " + map.Players[0].LeftHand.Strength, new Vector2((float)Coordinates.Step * 25, (float)Coordinates.Step * 3), Color.Black);
+            spriteBatch.DrawString(font, "Strength: " + map.Players[0].TotalStrength(), new Vector2((float)Coordinates.Step * 25, (float)Coordinates.Step * 3), Color.Black);
 
             spriteBatch.Draw(MouseCursors[currentMouse].Sprite, cursorPos, Color.White);
 

@@ -8,6 +8,8 @@ namespace Elysian_Fields
     class Player : Creature
     {
         public Item LeftHand = new Item();
+
+        private int totalStrength = 0;
         public Player()
         {
 
@@ -25,6 +27,11 @@ namespace Elysian_Fields
             Visible = true;
             EntityType = Entity.PlayerEntity;
             TargetID = -1;
+        }
+
+        public int TotalStrength()
+        {
+            return LeftHand.Strength + Experience + 1;
         }
     }
 }

@@ -41,6 +41,7 @@
     <Compile Include="AI.cs" />
     <Compile Include="Coordinates.cs" />
     <Compile Include="Creature.cs" />
+    <Compile Include="DamageObject.cs" />
     <Compile Include="DrawEngine.cs" />
     <Compile Include="ElysianGame.cs" />
     <Compile Include="Engine.cs" />

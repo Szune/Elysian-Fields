@@ -205,14 +205,17 @@ namespace Elysian_Fields
                 {
                     if (CanAttack(player, target) && DistanceToDiagonal(player.Position, target.Position) < 46) // < 46 because when standing diagonal, the distance is 45, when standing directly in front, it is 32
                     {
-                        target.Die();
-                        player.Experience += 1 + target.Experience;
-                        player.TargetID = -1;
-                        return 1;
+                        int dmgDealt = target.ReceiveDamage(player.TotalStrength());
+                        if (target.Health < 1)
+                        {
+                            player.Experience += 1 + target.Experience;
+                            player.TargetID = -1;
+                        }
+                        return dmgDealt;
                     }
                 }
             }
-            return 0;
+            return -1;
         }
 
         public bool CreatureAttack(Creature creature, Player target)

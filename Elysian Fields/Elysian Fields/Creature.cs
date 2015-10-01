@@ -50,6 +50,16 @@ namespace Elysian_Fields
             ResetPath();
         }
 
+        public int ReceiveDamage(int strength)
+        {
+            Health -= strength;
+            if(Health < 1)
+            {
+                Die();
+            }
+            return strength;
+        }
+
         public bool hasPath()
         {
             if (Path.Count > 0)
@@ -81,7 +91,6 @@ namespace Elysian_Fields
 
         public void Die()
         {
-            Health = 0;
             Visible = false;
         }
     }
