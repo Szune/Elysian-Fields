@@ -73,6 +73,18 @@ namespace Elysian_Fields
 
         }
 
+        public bool hasTarget()
+        {
+            if(TargetID != -1)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public void ResetPath()
         {
             Path.Clear();

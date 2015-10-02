@@ -320,36 +320,82 @@ namespace Elysian_Fields
             return Tiles[TileID];
         }
         
-        public void DragItem(Item item, Coordinates Tile)
+        public void DragItem(Item item, Coordinates Target)
         {
             bool tileThrowable = true;
 
-            int TileID = GetTileIDFromTile(Tile);
+            int TileID = GetTileIDFromTile(Target);
             if (TileID != -1) /* TODO: When map is finished, IsTileWalkable() should return false; if TileID == -1 (it should not be possible to walk where there is no sprite)*/
             {
                 tileThrowable = GetTileByID(TileID).Walkable;
             }
             if (tileThrowable)
             {
-                item.Position = new Coordinates(Tile.X, Tile.Y);
+                tileThrowable = AdjacentToItem(Players[0], item);
+            }
+            if (tileThrowable)
+            {
+                item.Position = new Coordinates(Target.X, Target.Y);
             }
         }
 
-        public void EquipItem(Item item, UI equipment)
+        public bool AdjacentToItem(Player player, Item item)
         {
-            item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
-            if (equipment.Name == "LHand")
+            if (DistanceToDiagonal(Players[0].Position, item.Position) < 46)
             {
-                Players[0].LeftHand = item;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public void EquipItem(Item item, UI equipment, UI sourceEquipment = null, bool haveToBeAdjacent = true)
+        {
+            if (AdjacentToItem(Players[0], item) || haveToBeAdjacent == false)
+            {
+                item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
+                switch (equipment.Name)
+                {
+                    case ItemSlot.LeftHand:
+                        Players[0].EquipItem(item, ItemSlot.LeftHand);
+                        break;
+                    case ItemSlot.RightHand:
+                        Players[0].EquipItem(item, ItemSlot.RightHand);
+                        break;
+                    default:
+                        break;
+
+                }
+
+                if (sourceEquipment != null)
+                {
+                    switch (sourceEquipment.Name)
+                    {
+                        case ItemSlot.LeftHand:
+                            Players[0].UnequipItem(ItemSlot.LeftHand);
+                            break;
+                        case ItemSlot.RightHand:
+                            Players[0].UnequipItem(ItemSlot.RightHand);
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
         }
 
         public void UnequipItem(Item item, UI equipment, Coordinates target)
         {
             item.Position = new Coordinates(target.X, target.Y);
-            if (equipment.Name == "LHand")
+            if (equipment.Name == ItemSlot.LeftHand)
             {
-                Players[0].LeftHand = new Item();
+                Players[0].UnequipItem(ItemSlot.LeftHand);
+            }
+            if (equipment.Name == ItemSlot.RightHand)
+            {
+                Players[0].UnequipItem(ItemSlot.RightHand);
             }
         }
 

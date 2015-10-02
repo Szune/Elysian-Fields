@@ -7,9 +7,8 @@ namespace Elysian_Fields
 {
     class Player : Creature
     {
-        public Item LeftHand = new Item();
+        public Equipment EquippedItems;
 
-        private int totalStrength = 0;
         public Player()
         {
 
@@ -27,11 +26,28 @@ namespace Elysian_Fields
             Visible = true;
             EntityType = Entity.PlayerEntity;
             TargetID = -1;
+            EquippedItems = new Equipment();
         }
 
         public int TotalStrength()
         {
-            return LeftHand.Strength + Experience + 1;
+            return EquippedItems.TotalStrength() + Experience + 1;
+        }
+
+        public void EquipItem(Item item, string _ItemSlot)
+        {
+            if (_ItemSlot == ItemSlot.LeftHand)
+                EquippedItems.LeftHand = item;
+            else if (_ItemSlot == ItemSlot.RightHand)
+                EquippedItems.RightHand = item;
+        }
+
+        public void UnequipItem(string _ItemSlot)
+        {
+            if (_ItemSlot == ItemSlot.LeftHand)
+                EquippedItems.LeftHand = new Item();
+            else if (_ItemSlot == ItemSlot.RightHand)
+                EquippedItems.RightHand = new Item();
         }
     }
 }

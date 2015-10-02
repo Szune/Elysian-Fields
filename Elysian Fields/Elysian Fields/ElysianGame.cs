@@ -19,7 +19,7 @@ namespace Elysian_Fields
         List<UI> listUI = new List<UI>();
         List<SpriteObject> MouseCursors = new List<SpriteObject>();
         Item dragItem = new Item();
-        Stack<DamageObject> dmgDone = new Stack<DamageObject>();
+        List<DamageObject> dmgDone = new List<DamageObject>();
 
         private int currentMouse = 0;
 
@@ -31,7 +31,6 @@ namespace Elysian_Fields
         private int leftClickTime;
 
         private int attackTime;
-        private int damageTime;
 
         private const int Direction_North = 1;
         private const int Direction_East = 2;
@@ -98,9 +97,14 @@ namespace Elysian_Fields
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\attackbox"), spriteList.Count + 1, Entity.UnknownEntity));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\tile2"), spriteList.Count + 1, Entity.TileEntity));
 
-            map.Items.Add(new Item("Sword of magicnezz", new Coordinates(13 * Coordinates.Step, 13 * Coordinates.Step), 1, 0, 60));
+            map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 3 * Coordinates.Step), 1, 0, 60));
+            map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 5 * Coordinates.Step), 1, 0, 60));
 
-            listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 25, Coordinates.Step * 0), "LHand"));
+            listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 0), ItemSlot.LeftHand));
+            listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 29, Coordinates.Step * 0), ItemSlot.RightHand));
+
+            map.EquipItem(map.Items[0], GetListUIByItemSlot(ItemSlot.LeftHand), null, false);
+            map.EquipItem(map.Items[1], GetListUIByItemSlot(ItemSlot.RightHand), null, false);
 
             MouseCursors.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\MouseRegular"), 1, Entity.UnknownEntity));
             MouseCursors.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\MouseDrag"), 2, Entity.UnknownEntity));
@@ -270,33 +274,43 @@ namespace Elysian_Fields
                 int x = (mx / 32) * 32;
                 int y = (my / 32) * 32;
                 Coordinates target = new Coordinates(x, y);
-                if (gameTime.TotalGameTime.TotalMilliseconds - leftClickTime < 200)
+                if (!map.OutOfBoundaries(target))
                 {
-                    if (map.IsTileWalkable(target))
+                    if (gameTime.TotalGameTime.TotalMilliseconds - leftClickTime < 200)
                     {
-                        map.GeneratePathFromCreature(map.Players[0], target);
-                    }
-                }
-                else
-                {
-                    if(dragItem.ID != -1)
-                    {
-                        UI equipment = GetListUIByMousePosition(x, y);
-                        if (equipment.ID == -1)
+                        if (map.IsTileWalkable(target))
                         {
-                            equipment = GetListUIByMousePosition(dragItem.Position.X, dragItem.Position.Y);
-                            if(equipment.ID == -1)
-                            { 
-                                map.DragItem(dragItem, target);
+                            map.GeneratePathFromCreature(map.Players[0], target);
+                        }
+                    }
+                    else
+                    {
+                        if (dragItem.ID != -1)
+                        {
+                            UI targetEquipment = GetListUIByMousePosition(x, y);
+                            UI sourceEquipment = GetListUIByMousePosition(dragItem.Position.X, dragItem.Position.Y);
+                            if (targetEquipment.ID == -1)
+                            {
+                                if (sourceEquipment.ID == -1)
+                                {
+                                    map.DragItem(dragItem, target);
+                                }
+                                else
+                                {
+                                    map.UnequipItem(dragItem, sourceEquipment, target);
+                                }
                             }
                             else
                             {
-                                map.UnequipItem(dragItem, equipment, target);
+                                if (sourceEquipment.ID == -1)
+                                {
+                                    map.EquipItem(dragItem, targetEquipment);
+                                }
+                                else
+                                {
+                                    map.EquipItem(dragItem, targetEquipment, sourceEquipment);
+                                }
                             }
-                        }
-                        else
-                        {
-                            map.EquipItem(dragItem, equipment);
                         }
                     }
                 }
@@ -340,12 +354,14 @@ namespace Elysian_Fields
             }
             if (gameTime.TotalGameTime.TotalMilliseconds - attackTime > 1000)
             {
-                if (map.CanAttack(map.Players[0], map.GetCreatureByID(map.Players[0].TargetID)))
+                if (map.CanAttack(map.Players[0], map.GetCreatureByID(map.Players[0].TargetID)) && map.Players[0].hasTarget())
                 {
+                    int targetID = map.Players[0].TargetID;
                     int dmgDealt = map.PlayerAttack(map.Players[0]);
                     if (dmgDealt != -1)
                     {
-                        dmgDone.Push(new DamageObject(map.GetCreatureByID(map.Players[0].TargetID), dmgDealt));
+                        int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                        dmgDone.Add(new DamageObject(map.GetCreatureByID(targetID), dmgDealt, currentTime, currentTime + DamageObject.DamageDuration));
                         attackTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
                     }
                 }
@@ -396,34 +412,33 @@ namespace Elysian_Fields
                     {
                         // Draw attackbox
                         spriteBatch.Draw(GetSpriteByID(3), new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                    }
+                }
 
-                        // Draw damage dealt
-                        if (dmgDone.Count > 0)
-                        {
-                            DamageObject dmgDealt = dmgDone.Peek();
-                            /*if (dmgDealt.creature.ID == map.Creatures[i].ID)
-                            {*/
-                                spriteBatch.DrawString(font, dmgDealt.damageDealt.ToString(), new Vector2((float)map.Creatures[i].Position.X + 5, (float)map.Creatures[i].Position.Y + 5), Color.Red);
-                                //damageTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
-                            //}
-                        }
 
-                        if (gameTime.TotalGameTime.TotalMilliseconds - attackTime > 750)
+                // Draw damage dealt
+                int currentTime = (int) gameTime.TotalGameTime.TotalMilliseconds;
+                if (dmgDone.Count > 0)
+                {
+                    for (int f = 0; f < dmgDone.Count; f++)
+                    {
+                        DrawOutlinedString(font, dmgDone[f].damageDealt.ToString(), new Vector2((float)dmgDone[f].creature.Position.X + 2, (float)dmgDone[f].creature.Position.Y + (float)dmgDone[f].OffsetY(currentTime)), Color.Red);
+                    }
+
+                    for (int j = 0; j < dmgDone.Count; j++)
+                    {
+                        if (currentTime > dmgDone[j].EndTime)
                         {
-                            if (dmgDone.Count > 0 && map.Players[0].TargetID != -1)
-                            {
-                                dmgDone.Pop();
-                                //damageTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
-                            }
+                            dmgDone.RemoveAt(j);
                         }
                     }
                 }
             }
 
 
-            spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)Coordinates.Step * 25, (float)Coordinates.Step), Color.Black);
-            spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)Coordinates.Step * 25, (float)Coordinates.Step * 2), Color.Black);
-            spriteBatch.DrawString(font, "Strength: " + map.Players[0].TotalStrength(), new Vector2((float)Coordinates.Step * 25, (float)Coordinates.Step * 3), Color.Black);
+            spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step), Color.Black);
+            spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 2), Color.Black);
+            spriteBatch.DrawString(font, "Strength: " + map.Players[0].TotalStrength(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 3), Color.Black);
 
             spriteBatch.Draw(MouseCursors[currentMouse].Sprite, cursorPos, Color.White);
 
@@ -438,6 +453,15 @@ namespace Elysian_Fields
             {
                 spriteBatch.Draw(listUI[i].Sprite, new Vector2((float)listUI[i].Position.X, (float)listUI[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             }
+        }
+
+        public void DrawOutlinedString(SpriteFont font, string Text, Vector2 position, Color color)
+        {
+            spriteBatch.DrawString(font, Text, new Vector2(position.X - 1, position.Y), Color.Black);
+            spriteBatch.DrawString(font, Text, new Vector2(position.X + 1, position.Y), Color.Black);
+            spriteBatch.DrawString(font, Text, new Vector2(position.X, position.Y + 1), Color.Black);
+            spriteBatch.DrawString(font, Text, new Vector2(position.X, position.Y - 1), Color.Black);
+            spriteBatch.DrawString(font, Text, position, color);
         }
 
         public Texture2D GetSpriteByID(int ID)
@@ -501,6 +525,20 @@ namespace Elysian_Fields
                     return listUI[i];
                 }
             }
+            return new UI();
+        }
+
+        private UI GetListUIByItemSlot(string _ItemSlot)
+        {
+            for(int i = 0; i < listUI.Count;i++)
+            {
+                if(listUI[i].Name == _ItemSlot)
+                {
+                    return listUI[i];
+                }
+
+            }
+
             return new UI();
         }
     }
