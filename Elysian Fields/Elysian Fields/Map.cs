@@ -5,6 +5,7 @@ using System.Text;
 using System.Configuration;
 using Microsoft.Xna;
 using System.IO;
+using Microsoft.Xna.Framework;
 
 namespace Elysian_Fields
 {
@@ -119,17 +120,6 @@ namespace Elysian_Fields
             }
         }
 
-        public void MoveCreatures()
-        {
-            for ( int i = 0; i < Creatures.Count; i++ )
-            {
-                if (Creatures[i].Health > 0 && Creatures[i].hasPath())
-                {
-                    MoveCreature(Creatures[i], Creatures[i].NextStep());
-                }
-            }
-        }
-
         public void MovePlayer()
         {
 /* TODO: Add multiplayer functionality and change Players[0] to a variable */
@@ -195,6 +185,20 @@ namespace Elysian_Fields
             }
         }
 
+        public int CreatureAttack(Creature creature, Player target)
+        {
+            if (CanAttack(creature, target))
+            {
+                int dmgDealt = target.ReceiveDamage(creature.Strength, target.TotalDefense());
+                if (target.Health < 1)
+                {
+                    creature.Experience += 1 + target.Experience;
+                }
+                return dmgDealt;
+            }
+            return -1;
+        }
+
         public int PlayerAttack(Player player)
         {
 
@@ -205,7 +209,7 @@ namespace Elysian_Fields
                 {
                     if (CanAttack(player, target) && DistanceToDiagonal(player.Position, target.Position) < 46) // < 46 because when standing diagonal, the distance is 45, when standing directly in front, it is 32
                     {
-                        int dmgDealt = target.ReceiveDamage(player.TotalStrength());
+                        int dmgDealt = target.ReceiveDamage(player.TotalStrength(), target.Defense);
                         if (target.Health < 1)
                         {
                             player.Experience += 1 + target.Experience;
@@ -218,26 +222,41 @@ namespace Elysian_Fields
             return -1;
         }
 
-        public bool CreatureAttack(Creature creature, Player target)
+        public List<DamageObject> PlayerCastSpell(Player player, Spell spell, GameTime gameTime)
         {
-            if (target.SuperPowerSteps < 1 && CanAttack(creature, target))
+            List<DamageObject> DamagedMonsters = new List<DamageObject>();
+            for (int i = 0; i < spell.Area.Length / 3; i++)
             {
-                target.Die();
-                draw.MoveObject(creature, target.Position);
-                creature.Experience += 1 + target.Experience;
-                return true;
+                for (int j = 0; j < spell.Area.Length / 3; j++)
+                {
+                    if (spell.Area[i + j])
+                    {
+                        int creatureID = GetCreatureIDFromTile(new Coordinates(player.Position.X - Coordinates.Step + (i * Coordinates.Step), player.Position.Y - Coordinates.Step + (j * Coordinates.Step)));
+                        if(creatureID != -1)
+                        {
+                            Creature creature = GetCreatureByID(creatureID);
+                            if(creature.Health > 0)
+                            {
+                                int DamageDealt = creature.ReceiveDamage(spell.Damage, 0);
+                                int currentTime = (int) gameTime.TotalGameTime.TotalMilliseconds;
+                                DamagedMonsters.Add(new DamageObject(creature, DamageDealt, currentTime, currentTime + DamageObject.DamageDuration));
+                            }
+                        }
+                    }
+                }
             }
-            return false;
+
+            return DamagedMonsters;
         }
 
 
-        public bool CanAttack(Entity creature, Entity target)
+        public bool CanAttack(Creature creature, Creature target)
         {
-            if (creature.Name == target.Name && !FriendlyFire)
+            if (target.Health > 0 && creature.Health > 0)
             {
-                return false;
+                return true;
             }
-            return true;
+            return false;
         }
 
         public bool Eat(Player creature, Coordinates step)
@@ -273,7 +292,7 @@ namespace Elysian_Fields
 
         public bool IsAdjacent(Entity Object1, Entity Object2)
         {
-            return (DistanceTo(Object2.Position, Object1.Position) == 1);
+            return (DistanceToDiagonal(Object2.Position, Object1.Position) < 46);
         }
 
         public int DistanceTo(Coordinates Source, Coordinates Destination)
@@ -496,7 +515,16 @@ namespace Elysian_Fields
         public Player GetPlayerByID(int ID)
         {
             /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
-            return Players[0];
+            for (int i = 0; i < Players.Count;i++)
+            {
+                if(Players[i].ID == ID)
+                {
+                    return Players[i];
+                }
+            }
+            return new Player();
+
+            //return Players[0];
         }
 
         public Entity GetCreatureByName(string Name)

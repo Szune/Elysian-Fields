@@ -21,6 +21,8 @@ namespace Elysian_Fields
 
         //public int OffsetX
 
+        public Coordinates Position = new Coordinates();
+
         //public int StartOffsetX;
         public double StartOffsetY = 15;
 
@@ -32,13 +34,14 @@ namespace Elysian_Fields
             ID = -1;
         }
 
-        public DamageObject(Creature monster, int Damage, int _StartTime, int _EndTime, int id = 0)
+        public DamageObject(Creature monster, int Damage, int _StartTime, int _EndTime, int id = 0, Coordinates pos = null)
         {
             creature = monster;
             damageDealt = Damage;
             ID = id;
             EndTime = _EndTime;
             StartTime = _StartTime;
+            Position = pos;
         }
 
         public double OffsetY(int CurrentTime)

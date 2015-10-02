@@ -383,7 +383,7 @@ namespace Elysian_Fields
         {
             if (LogicCounter == 1)
             {
-                map.MoveCreatures(); // Kallar metoden för att förflytta spökena
+                //map.MoveCreatures(); // Kallar metoden för att förflytta spökena
             }
 
             if (LogicCounter == 2)
@@ -460,7 +460,7 @@ namespace Elysian_Fields
                 map.CreatureCount += 1;
                 SpawnCoordinates = FindEmptyTile(MapWidth, MapHeight);
                 /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
-                map.Creatures.Add(new Creature("G", SpawnCoordinates, map.Players[0].ID, ConsoleColor.Red, 1, map.CreatureCount));
+                map.Creatures.Add(new Creature("Ghost", SpawnCoordinates, map.Players[0].ID, 1, map.CreatureCount));
             }
         }
 

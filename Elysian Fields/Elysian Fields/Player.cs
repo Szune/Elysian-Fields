@@ -11,7 +11,8 @@ namespace Elysian_Fields
 
         public Player()
         {
-
+            Name = "null";
+            ID = -1;
         }
         public Player(string name, Coordinates coordinates, int health = 1, int id = 0)
         {
@@ -31,7 +32,12 @@ namespace Elysian_Fields
 
         public int TotalStrength()
         {
-            return EquippedItems.TotalStrength() + Experience + 1;
+            return EquippedItems.TotalStrength() + 1;
+        }
+
+        public int TotalDefense()
+        {
+            return EquippedItems.TotalDefense();
         }
 
         public void EquipItem(Item item, string _ItemSlot)

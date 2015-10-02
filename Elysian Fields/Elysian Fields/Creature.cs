@@ -19,20 +19,24 @@ namespace Elysian_Fields
         public int MaxHealth { get; set; }
         public int Health { get; set; }
 
+        public int Strength { get; set; }
+        public int Defense { get; set; }
+
+        public int TimeOfLastAttack;
+
 
         public Creature()
         {
-
+            ID = -1;
         }
-        public Creature(string name, int id = 0) { Name = name; MaxHealth = 1; Health = 1; ID = id; }
+        public Creature(string name, int id = -1) { Name = name; MaxHealth = 1; Health = 1; ID = id; }
 
-        public Creature(string name, Coordinates coordinates, int targetID, ConsoleColor color = ConsoleColor.White, int health = 1, int id = 0)
+        public Creature(string name, Coordinates coordinates, int targetID, int strength = 1, int health = 1, int id = 0, int defense = 0)
         {
             /* Spöken */
             Name = name;
             Position = coordinates;
             SpawnPosition = coordinates;
-            Color = color;
             MaxHealth = health;
             Health = health;
             ID = id;
@@ -40,6 +44,9 @@ namespace Elysian_Fields
             SuperPowerSteps = -1;
             Visible = true;
             EntityType = Entity.CreatureEntity;
+            Strength = strength;
+            TimeOfLastAttack = 0;
+            Defense = defense;
         }
 
         public void Spawn()
@@ -50,14 +57,17 @@ namespace Elysian_Fields
             ResetPath();
         }
 
-        public int ReceiveDamage(int strength)
+        public int ReceiveDamage(int strength, int defense)
         {
-            Health -= strength;
+            Random generator = new Random();
+            int DamageDone = generator.Next(0, strength) - generator.Next(0, defense);
+            if (DamageDone < 0) DamageDone = 0;
+            Health -= DamageDone;
             if(Health < 1)
             {
                 Die();
             }
-            return strength;
+            return DamageDone;
         }
 
         public bool hasPath()

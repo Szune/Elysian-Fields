@@ -20,6 +20,10 @@ namespace Elysian_Fields
         List<SpriteObject> MouseCursors = new List<SpriteObject>();
         Item dragItem = new Item();
         List<DamageObject> dmgDone = new List<DamageObject>();
+        List<Spell> Spells = new List<Spell>();
+        List<UI> spellUI = new List<UI>();
+
+        List<DamageObject> SpellDamage = new List<DamageObject>();
 
         private int currentMouse = 0;
 
@@ -29,8 +33,6 @@ namespace Elysian_Fields
         private bool LeftClicked = false;
 
         private int leftClickTime;
-
-        private int attackTime;
 
         private const int Direction_North = 1;
         private const int Direction_East = 2;
@@ -42,6 +44,8 @@ namespace Elysian_Fields
         private Keys lastPressedKey;
         private Keys mostRecentKey;
         private bool Walking = false;
+
+        private bool regenerated = false;
         //Player player1;
 
 
@@ -72,7 +76,7 @@ namespace Elysian_Fields
 
             for(int i = 0; i < 5; i++)
             {
-                map.Creatures.Add(new Creature("Ghost" + i.ToString(), new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, System.ConsoleColor.White, 100, i + 1));
+                map.Creatures.Add(new Creature("Ghost" + i.ToString(), new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, 5, 100, i + 1));
             }
 
             //this.IsMouseVisible = true;
@@ -97,11 +101,19 @@ namespace Elysian_Fields
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\attackbox"), spriteList.Count + 1, Entity.UnknownEntity));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\tile2"), spriteList.Count + 1, Entity.TileEntity));
 
-            map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 3 * Coordinates.Step), 1, 0, 60));
-            map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 5 * Coordinates.Step), 1, 0, 60));
+            map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 3 * Coordinates.Step), 1, 0, 60, 1));
+            map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 5 * Coordinates.Step), 1, 0, 60, 1));
+
+            Spells.Add(new Spell(new bool[]
+            {true, true, true,
+            true, true, true,
+            true, true, true}
+            , 50, Content.Load<Texture2D>("Graphics\\fistspell"), 1));
 
             listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 0), ItemSlot.LeftHand));
             listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 29, Coordinates.Step * 0), ItemSlot.RightHand));
+
+            spellUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fistspell"), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 0),"Fist", 1));
 
             map.EquipItem(map.Items[0], GetListUIByItemSlot(ItemSlot.LeftHand), null, false);
             map.EquipItem(map.Items[1], GetListUIByItemSlot(ItemSlot.RightHand), null, false);
@@ -254,15 +266,27 @@ namespace Elysian_Fields
                 {
                     int x = Mouse.GetState().X, y = Mouse.GetState().Y;
                     int creatureID = GetCreatureByMousePosition(x, y).ID;
-                    if (map.Players[0].TargetID == creatureID)
+                    if (creatureID != -1)
                     {
-                        map.Players[0].TargetID = -1;
+                        if (map.Players[0].TargetID == creatureID)
+                        {
+                            map.Players[0].TargetID = -1;
+                        }
+                        else
+                        {
+                            map.Players[0].TargetID = creatureID;
+                        }
                     }
                     else
                     {
-                        map.Players[0].TargetID = creatureID;
+                        Spell CastSpell = GetSpellByMousePosition(x, y);
+                        if (CastSpell.ID != -1)
+                        {
+                            SpellDamage.Add(new DamageObject(map.Players[0], CastSpell.Damage, (int)gameTime.TotalGameTime.TotalMilliseconds, (int)gameTime.TotalGameTime.TotalMilliseconds + 1500, CastSpell.ID, map.Players[0].Position));
+                            dmgDone.AddRange(map.PlayerCastSpell(map.Players[0], CastSpell, gameTime));
+                        }
                     }
-                    // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();
+
                     // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();
                     RightClicked = true;
                 }
@@ -345,14 +369,28 @@ namespace Elysian_Fields
 
             if (gameTime.TotalGameTime.Milliseconds % 250 == 0)
             {
-                map.MoveCreatures();
+                MoveCreatures(gameTime);
             }
 
             if (gameTime.TotalGameTime.Milliseconds % 1000 == 0)
             {
                 map.GeneratePaths();// <- Remove this to make monsters move
             }
-            if (gameTime.TotalGameTime.TotalMilliseconds - attackTime > 1000)
+
+            if (gameTime.TotalGameTime.Seconds % 2 == 0 && !regenerated)
+            {
+                //Window.Title = "Hej" + gameTime.TotalGameTime.Seconds.ToString();
+                regenerated = true;
+                BaseHPRegeneration();
+            }
+            else if(gameTime.TotalGameTime.Seconds % 2 == 1 && regenerated)
+            {
+                regenerated = false;
+            }
+
+            //Window.Title = (gameTime.TotalGameTime.Seconds % 2).ToString();
+
+            if (gameTime.TotalGameTime.TotalMilliseconds - map.Players[0].TimeOfLastAttack > 1000)
             {
                 if (map.CanAttack(map.Players[0], map.GetCreatureByID(map.Players[0].TargetID)) && map.Players[0].hasTarget())
                 {
@@ -362,12 +400,49 @@ namespace Elysian_Fields
                     {
                         int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
                         dmgDone.Add(new DamageObject(map.GetCreatureByID(targetID), dmgDealt, currentTime, currentTime + DamageObject.DamageDuration));
-                        attackTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                        map.Players[0].TimeOfLastAttack = (int)gameTime.TotalGameTime.TotalMilliseconds;
                     }
                 }
             }
 
             base.Update(gameTime);
+        }
+
+        public void BaseHPRegeneration()
+        {
+            for (int h = 0; h < map.Players.Count; h++)
+            {
+                if (map.Players[h].Health < map.Players[h].MaxHealth)
+                {
+                    map.Players[h].Health += 1;
+                }
+            }
+        }
+
+        public void MoveCreatures(GameTime gameTime)
+        {
+            for (int i = 0; i < map.Creatures.Count; i++)
+            {
+                if (map.Creatures[i].Health > 0 && map.Creatures[i].hasPath())
+                {
+                    map.MoveCreature(map.Creatures[i], map.Creatures[i].NextStep());
+                }
+                else if (map.IsAdjacent(map.Creatures[i], map.Players[0]))
+                {
+                    if (gameTime.TotalGameTime.TotalMilliseconds - map.Creatures[i].TimeOfLastAttack > 1000)
+                    {
+                        int targetID = map.Creatures[i].TargetID;
+                        int dmgDealt = map.CreatureAttack(map.Creatures[i], map.Players[0]);
+                        if (dmgDealt != -1)
+                        {
+                            int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                            map.Creatures[i].TimeOfLastAttack = currentTime;
+                            dmgDone.Add(new DamageObject(map.GetPlayerByID(targetID), dmgDealt, currentTime, currentTime + DamageObject.DamageDuration));
+
+                        }
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -435,10 +510,13 @@ namespace Elysian_Fields
                 }
             }
 
+            DrawSpells(gameTime);
+
 
             spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step), Color.Black);
             spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 2), Color.Black);
             spriteBatch.DrawString(font, "Strength: " + map.Players[0].TotalStrength(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 3), Color.Black);
+            spriteBatch.DrawString(font, "Defense: " + map.Players[0].TotalDefense(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 4), Color.Black);
 
             spriteBatch.Draw(MouseCursors[currentMouse].Sprite, cursorPos, Color.White);
 
@@ -447,11 +525,51 @@ namespace Elysian_Fields
             base.Draw(gameTime);
         }
 
+        private void DrawSpells(GameTime gameTime)
+        {
+            for(int i = 0; i < SpellDamage.Count; i++)
+            {
+                DrawSpell(GetSpellByID(SpellDamage[i].ID), gameTime);
+            }
+
+        }
+        private void DrawSpell(Spell spell, GameTime gameTime)
+        {
+            if (SpellDamage.Count > 0)
+            {
+                for (int f = 0; f < SpellDamage.Count; f++)
+                {
+                    if (gameTime.TotalGameTime.TotalMilliseconds < SpellDamage[f].EndTime)
+                    {
+                        for (int i = 0; i < spell.Area.Length / 3; i++)
+                        {
+                            for (int j = 0; j < spell.Area.Length / 3; j++)
+                            {
+                                if (spell.Area[i + j])
+                                {
+                                    spriteBatch.Draw(spell.Sprite, new Vector2((float)SpellDamage[f].Position.X - Coordinates.Step + (i * Coordinates.Step), (float)SpellDamage[f].Position.Y - Coordinates.Step + (j * Coordinates.Step)), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        SpellDamage.RemoveAt(f);
+                    }
+                }
+            }
+        }
+
         public void DrawUI()
         {
             for (int i = 0; i < listUI.Count; i++)
             {
                 spriteBatch.Draw(listUI[i].Sprite, new Vector2((float)listUI[i].Position.X, (float)listUI[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
+
+            for (int i = 0; i < spellUI.Count; i++)
+            {
+                spriteBatch.Draw(spellUI[i].Sprite, new Vector2((float)spellUI[i].Position.X, (float)spellUI[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             }
         }
 
@@ -527,6 +645,34 @@ namespace Elysian_Fields
             }
             return new UI();
         }
+
+        private Spell GetSpellByMousePosition(int x, int y)
+        {
+            Rectangle tmpRect;
+            tmpRect.Height = 32;
+            tmpRect.Width = 32;
+            for (int i = 0; i < spellUI.Count; i++)
+            {
+                tmpRect.X = spellUI[i].Position.X;
+                tmpRect.Y = spellUI[i].Position.Y;
+                if (tmpRect.Contains(x, y))
+                {
+                    return GetSpellByID(spellUI[i].SpellID);
+                }
+            }
+            return new Spell();
+        }
+
+        private Spell GetSpellByID(int ID)
+        {
+            for(int i = 0; i < Spells.Count; i++)
+            {
+                if (Spells[i].ID == ID) return Spells[i];
+            }
+
+            return new Spell();
+        }
+
 
         private UI GetListUIByItemSlot(string _ItemSlot)
         {

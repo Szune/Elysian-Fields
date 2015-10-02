@@ -20,5 +20,10 @@ namespace Elysian_Fields
         {
             return LeftHand.Strength + RightHand.Strength;
         }
+
+        public int TotalDefense()
+        {
+            return LeftHand.Defense + RightHand.Defense;
+        }
     }
 }
