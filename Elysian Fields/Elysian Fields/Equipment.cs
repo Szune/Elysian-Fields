@@ -9,6 +9,8 @@ namespace Elysian_Fields
     {
         public Item LeftHand = new Item();
         public Item RightHand = new Item();
+        public Item Armor = new Item();
+        public Item Helmet = new Item();
 
 
         public Equipment()
@@ -18,12 +20,53 @@ namespace Elysian_Fields
 
         public int TotalStrength()
         {
-            return LeftHand.Strength + RightHand.Strength;
+            return LeftHand.Strength + RightHand.Strength + Armor.Strength + Helmet.Strength;
         }
 
         public int TotalDefense()
         {
-            return LeftHand.Defense + RightHand.Defense;
+            return LeftHand.Defense + RightHand.Defense + Armor.Defense + Helmet.Defense;
         }
+
+        public void EquipItem(Item item, string _ItemSlot)
+        {
+            if (_ItemSlot == ItemSlot.LeftHand)
+            {
+                LeftHand = item;
+            }
+            else if(_ItemSlot == ItemSlot.RightHand)
+            {
+                RightHand = item;
+            }
+            else if(_ItemSlot == ItemSlot.Armor)
+            {
+                Armor = item;
+            }
+            else if (_ItemSlot == ItemSlot.Helmet)
+            {
+                Helmet = item;
+            }
+        }
+
+        public void UnequipItem(string _ItemSlot)
+        {
+            if (_ItemSlot == ItemSlot.LeftHand)
+            {
+                LeftHand = new Item();
+            }
+            else if (_ItemSlot == ItemSlot.RightHand)
+            {
+                RightHand = new Item();
+            }
+            else if (_ItemSlot == ItemSlot.Armor)
+            {
+                Armor = new Item();
+            }
+            else if (_ItemSlot == ItemSlot.Helmet)
+            {
+                Helmet = new Item();
+            }
+        }
+
     }
 }

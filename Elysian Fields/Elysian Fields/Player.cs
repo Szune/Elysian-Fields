@@ -45,18 +45,12 @@ namespace Elysian_Fields
 
         public void EquipItem(Item item, string _ItemSlot)
         {
-            if (_ItemSlot == ItemSlot.LeftHand)
-                EquippedItems.LeftHand = item;
-            else if (_ItemSlot == ItemSlot.RightHand)
-                EquippedItems.RightHand = item;
+            EquippedItems.EquipItem(item, _ItemSlot);
         }
 
         public void UnequipItem(string _ItemSlot)
         {
-            if (_ItemSlot == ItemSlot.LeftHand)
-                EquippedItems.LeftHand = new Item();
-            else if (_ItemSlot == ItemSlot.RightHand)
-                EquippedItems.RightHand = new Item();
+            EquippedItems.UnequipItem(_ItemSlot);
         }
 
         public bool IsExhausted(int CurrentTime)

@@ -409,32 +409,11 @@ namespace Elysian_Fields
             if (AdjacentToItem(Players[0], item) || haveToBeAdjacent == false)
             {
                 item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
-                switch (equipment.Name)
-                {
-                    case ItemSlot.LeftHand:
-                        Players[0].EquipItem(item, ItemSlot.LeftHand);
-                        break;
-                    case ItemSlot.RightHand:
-                        Players[0].EquipItem(item, ItemSlot.RightHand);
-                        break;
-                    default:
-                        break;
-
-                }
+                Players[0].EquipItem(item, equipment.Name);
 
                 if (sourceEquipment != null)
                 {
-                    switch (sourceEquipment.Name)
-                    {
-                        case ItemSlot.LeftHand:
-                            Players[0].UnequipItem(ItemSlot.LeftHand);
-                            break;
-                        case ItemSlot.RightHand:
-                            Players[0].UnequipItem(ItemSlot.RightHand);
-                            break;
-                        default:
-                            break;
-                    }
+                    Players[0].UnequipItem(sourceEquipment.Name);
                 }
             }
         }
@@ -442,14 +421,7 @@ namespace Elysian_Fields
         public void UnequipItem(Item item, UI equipment, Coordinates target)
         {
             item.Position = new Coordinates(target.X, target.Y);
-            if (equipment.Name == ItemSlot.LeftHand)
-            {
-                Players[0].UnequipItem(ItemSlot.LeftHand);
-            }
-            if (equipment.Name == ItemSlot.RightHand)
-            {
-                Players[0].UnequipItem(ItemSlot.RightHand);
-            }
+            Players[0].UnequipItem(equipment.Name);
         }
 
         public bool IsTileWalkable(Coordinates Tile)

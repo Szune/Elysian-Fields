@@ -9,10 +9,12 @@ namespace Elysian_Fields
     {
         public const string LeftHand = "LHand";
         public const string RightHand = "RHand";
+        public const string Armor = "Armor";
+        public const string Helmet = "Helmet";
 
         public ItemSlot()
         {
-            
+
         }
     }
 }

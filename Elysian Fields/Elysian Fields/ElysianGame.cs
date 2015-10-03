@@ -104,9 +104,15 @@ namespace Elysian_Fields
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fistspell_animation"), spriteList.Count + 1, Entity.SpellEntity));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\healspell_ui"), spriteList.Count + 1, Entity.SpellEntity));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\healspell_animation"), spriteList.Count + 1, Entity.SpellEntity));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\goldenarmor"), spriteList.Count + 1, Entity.ItemEntity));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\torso"), spriteList.Count + 1, Entity.UnknownEntity));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\helmet"), spriteList.Count + 1, Entity.UnknownEntity));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\hornedhelmet"), spriteList.Count + 1, Entity.ItemEntity));
 
             map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 3 * Coordinates.Step), 1, 0, 60, 1));
             map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 5 * Coordinates.Step), 1, 0, 60, 1));
+            map.Items.Add(new Item("Golden armor", new Coordinates(2 * Coordinates.Step, 2 * Coordinates.Step), 9, 0, 0, 25));
+            map.Items.Add(new Item("Horned helmet", new Coordinates(3 * Coordinates.Step, 2 * Coordinates.Step), 12, 0, 0, 20));
 
             Spells.Add(new Spell(new bool[]
             {true, true, true,
@@ -117,13 +123,17 @@ namespace Elysian_Fields
             Spells.Add(new Spell(new bool[] { true }, 50, GetSpriteByID(8), 5, true, true, 2));
 
             listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 0), ItemSlot.LeftHand));
-            listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 29, Coordinates.Step * 0), ItemSlot.RightHand));
+            listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 0), ItemSlot.RightHand));
+            listUI.Add(new UI(GetSpriteByID(11), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 29, Coordinates.Step * 0), ItemSlot.Helmet));
+            listUI.Add(new UI(GetSpriteByID(10), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 30, Coordinates.Step * 0), ItemSlot.Armor));
 
-            spellUI.Add(new UI(GetSpriteByID(5), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 0),"Fist", 1));
-            spellUI.Add(new UI(GetSpriteByID(7), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 30, Coordinates.Step * 0), "Heal", 2));
+            spellUI.Add(new UI(GetSpriteByID(5), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 1),"Fist", 1));
+            spellUI.Add(new UI(GetSpriteByID(7), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 1), "Heal", 2));
 
             map.EquipItem(map.Items[0], GetListUIByItemSlot(ItemSlot.LeftHand), null, false);
             map.EquipItem(map.Items[1], GetListUIByItemSlot(ItemSlot.RightHand), null, false);
+            map.EquipItem(map.Items[2], GetListUIByItemSlot(ItemSlot.Armor), null, false);
+            map.EquipItem(map.Items[3], GetListUIByItemSlot(ItemSlot.Helmet), null, false);
 
             MouseCursors.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\MouseRegular"), 1, Entity.UnknownEntity));
             MouseCursors.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\MouseDrag"), 2, Entity.UnknownEntity));
@@ -250,7 +260,7 @@ namespace Elysian_Fields
                     {
                         map.Players[0].ResetPath();
                     }
-                }                
+                }
             }
 
             if (gameTime.TotalGameTime.TotalMilliseconds - TimeOfLastMovement > 250)
@@ -504,12 +514,12 @@ namespace Elysian_Fields
             // Draw damage dealt
             DrawDamageDone(gameTime);
 
-
-            spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step), Color.Black);
-            spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 2), Color.Black);
-            spriteBatch.DrawString(font, "Mana: " + map.Players[0].Mana + " / " + map.Players[0].MaxMana, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 3), Color.Black);
-            spriteBatch.DrawString(font, "Strength: " + map.Players[0].TotalStrength(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 4), Color.Black);
-            spriteBatch.DrawString(font, "Defense: " + map.Players[0].TotalDefense(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 5), Color.Black);
+            int startStep = (spellUI[spellUI.Count - 1].Position.Y / 32) + 1;
+            spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
+            spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
+            spriteBatch.DrawString(font, "Mana: " + map.Players[0].Mana + " / " + map.Players[0].MaxMana, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
+            spriteBatch.DrawString(font, "Strength: " + map.Players[0].TotalStrength(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
+            spriteBatch.DrawString(font, "Defense: " + map.Players[0].TotalDefense(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
 
             spriteBatch.Draw(MouseCursors[currentMouse].Sprite, cursorPos, Color.White);
 
