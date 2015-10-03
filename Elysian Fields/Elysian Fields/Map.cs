@@ -222,26 +222,60 @@ namespace Elysian_Fields
             return -1;
         }
 
-        public List<DamageObject> PlayerCastSpell(Player player, Spell spell, GameTime gameTime)
+        public List<DamageObject> PlayerCastSpell(Player player, Spell spell, Creature target, GameTime gameTime)
         {
             List<DamageObject> DamagedMonsters = new List<DamageObject>();
-            for (int i = 0; i < spell.Area.Length / 3; i++)
+            int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+            if (!spell.TargetSpell)
             {
-                for (int j = 0; j < spell.Area.Length / 3; j++)
+                for (int i = 0; i < spell.Area.Length / 3; i++)
                 {
-                    if (spell.Area[i + j])
+                    for (int j = 0; j < spell.Area.Length / 3; j++)
                     {
-                        int creatureID = GetCreatureIDFromTile(new Coordinates(player.Position.X - Coordinates.Step + (i * Coordinates.Step), player.Position.Y - Coordinates.Step + (j * Coordinates.Step)));
-                        if(creatureID != -1)
+                        if (spell.Area[i + j])
                         {
-                            Creature creature = GetCreatureByID(creatureID);
-                            if(creature.Health > 0)
+                            /* TODO: Make area spell healing possible! */
+                            int creatureID = GetCreatureIDFromTile(new Coordinates(player.Position.X - Coordinates.Step + (i * Coordinates.Step), player.Position.Y - Coordinates.Step + (j * Coordinates.Step)));
+                            if (creatureID != -1)
                             {
-                                int DamageDealt = creature.ReceiveDamage(spell.Damage, 0);
-                                int currentTime = (int) gameTime.TotalGameTime.TotalMilliseconds;
-                                DamagedMonsters.Add(new DamageObject(creature, DamageDealt, currentTime, currentTime + DamageObject.DamageDuration));
+                                Creature creature = GetCreatureByID(creatureID);
+                                if (creature.Health > 0)
+                                {
+                                    int DamageDealt = creature.ReceiveDamage(spell.Damage, 0);
+                                    DamagedMonsters.Add(new DamageObject(creature, DamageDealt, spell.HealSpell, currentTime, currentTime + DamageObject.DamageDuration));
+                                    if (creature.Health < 1)
+                                    {
+                                        player.Experience += creature.Experience + 1;
+                                    }
+                                }
                             }
                         }
+                    }
+                }
+            }
+            else
+            {
+                if(spell.HealSpell)
+                {
+                    int damage = spell.Damage;
+                    if (player.Health + damage > player.MaxHealth)
+                    {
+                        damage = player.MaxHealth - player.Health;
+                        player.Health = player.MaxHealth;
+                    }
+                    else
+                    {
+                        player.Health += damage;
+                    }
+                    DamagedMonsters.Add(new DamageObject(player, damage, spell.HealSpell, currentTime, currentTime + DamageObject.DamageDuration));
+                }
+                else
+                {
+                    int DamageDealt = target.ReceiveDamage(spell.Damage, 0);
+                    DamagedMonsters.Add(new DamageObject(target, DamageDealt, spell.HealSpell, currentTime, currentTime + DamageObject.DamageDuration));
+                    if (target.Health < 1)
+                    {
+                        player.Experience += target.Experience + 1;
                     }
                 }
             }

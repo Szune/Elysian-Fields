@@ -19,6 +19,8 @@ namespace Elysian_Fields
 
         public int CurrentStep = 0;
 
+        public bool Healing;
+
         //public int OffsetX
 
         public Coordinates Position = new Coordinates();
@@ -34,7 +36,7 @@ namespace Elysian_Fields
             ID = -1;
         }
 
-        public DamageObject(Creature monster, int Damage, int _StartTime, int _EndTime, int id = 0, Coordinates pos = null)
+        public DamageObject(Creature monster, int Damage, bool healing, int _StartTime, int _EndTime, int id = 0, Coordinates pos = null)
         {
             creature = monster;
             damageDealt = Damage;
@@ -42,6 +44,7 @@ namespace Elysian_Fields
             EndTime = _EndTime;
             StartTime = _StartTime;
             Position = pos;
+            Healing = healing;
         }
 
         public double OffsetY(int CurrentTime)

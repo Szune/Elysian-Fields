@@ -23,6 +23,7 @@ namespace Elysian_Fields
         public const int TileEntity = 3;
         public const int ItemEntity = 4;
         public const int UnknownEntity = 5;
+        public const int SpellEntity = 6;
 
         
 

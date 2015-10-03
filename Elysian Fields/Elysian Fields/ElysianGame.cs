@@ -71,7 +71,7 @@ namespace Elysian_Fields
             // TODO: Add your initialization logic here
 
             map = new Map(new Coordinates(Window.ClientBounds.Width, Window.ClientBounds.Height));
-            map.Players.Add(new Player("Aephirus", new Coordinates(0, 0), 150, 1));
+            map.Players.Add(new Player("Aephirus", new Coordinates(0, 0), 150, 100, 1));
             //player1 = new Player("Aephirus", new Coordinates(0, 0));
 
             for(int i = 0; i < 5; i++)
@@ -100,6 +100,10 @@ namespace Elysian_Fields
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\tile"), spriteList.Count + 1, Entity.TileEntity));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\attackbox"), spriteList.Count + 1, Entity.UnknownEntity));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\tile2"), spriteList.Count + 1, Entity.TileEntity));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fistspell_ui"), spriteList.Count + 1, Entity.SpellEntity));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fistspell_animation"), spriteList.Count + 1, Entity.SpellEntity));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\healspell_ui"), spriteList.Count + 1, Entity.SpellEntity));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\healspell_animation"), spriteList.Count + 1, Entity.SpellEntity));
 
             map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 3 * Coordinates.Step), 1, 0, 60, 1));
             map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 5 * Coordinates.Step), 1, 0, 60, 1));
@@ -108,12 +112,15 @@ namespace Elysian_Fields
             {true, true, true,
             true, true, true,
             true, true, true}
-            , 50, Content.Load<Texture2D>("Graphics\\fistspell"), 1));
+            , 50, GetSpriteByID(6), 20, false, false, 1));
+
+            Spells.Add(new Spell(new bool[] { true }, 50, GetSpriteByID(8), 5, true, true, 2));
 
             listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 0), ItemSlot.LeftHand));
             listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 29, Coordinates.Step * 0), ItemSlot.RightHand));
 
-            spellUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fistspell"), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 0),"Fist", 1));
+            spellUI.Add(new UI(GetSpriteByID(5), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 0),"Fist", 1));
+            spellUI.Add(new UI(GetSpriteByID(7), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 30, Coordinates.Step * 0), "Heal", 2));
 
             map.EquipItem(map.Items[0], GetListUIByItemSlot(ItemSlot.LeftHand), null, false);
             map.EquipItem(map.Items[1], GetListUIByItemSlot(ItemSlot.RightHand), null, false);
@@ -282,8 +289,11 @@ namespace Elysian_Fields
                         Spell CastSpell = GetSpellByMousePosition(x, y);
                         if (CastSpell.ID != -1)
                         {
-                            SpellDamage.Add(new DamageObject(map.Players[0], CastSpell.Damage, (int)gameTime.TotalGameTime.TotalMilliseconds, (int)gameTime.TotalGameTime.TotalMilliseconds + 1500, CastSpell.ID, map.Players[0].Position));
-                            dmgDone.AddRange(map.PlayerCastSpell(map.Players[0], CastSpell, gameTime));
+                            if (map.Players[0].CastSpell(CastSpell, (int)gameTime.TotalGameTime.TotalMilliseconds))
+                            {
+                                SpellDamage.Add(new DamageObject(map.Players[0], CastSpell.Damage, CastSpell.HealSpell, (int)gameTime.TotalGameTime.TotalMilliseconds, (int)gameTime.TotalGameTime.TotalMilliseconds + 1500, CastSpell.ID, map.Players[0].Position));
+                                dmgDone.AddRange(map.PlayerCastSpell(map.Players[0], CastSpell, map.GetCreatureByID(map.Players[0].TargetID), gameTime));
+                            }
                         }
                     }
 
@@ -381,7 +391,7 @@ namespace Elysian_Fields
             {
                 //Window.Title = "Hej" + gameTime.TotalGameTime.Seconds.ToString();
                 regenerated = true;
-                BaseHPRegeneration();
+                BaseRegeneration();
             }
             else if(gameTime.TotalGameTime.Seconds % 2 == 1 && regenerated)
             {
@@ -399,7 +409,7 @@ namespace Elysian_Fields
                     if (dmgDealt != -1)
                     {
                         int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
-                        dmgDone.Add(new DamageObject(map.GetCreatureByID(targetID), dmgDealt, currentTime, currentTime + DamageObject.DamageDuration));
+                        dmgDone.Add(new DamageObject(map.GetCreatureByID(targetID), dmgDealt, false, currentTime, currentTime + DamageObject.DamageDuration));
                         map.Players[0].TimeOfLastAttack = (int)gameTime.TotalGameTime.TotalMilliseconds;
                     }
                 }
@@ -408,13 +418,17 @@ namespace Elysian_Fields
             base.Update(gameTime);
         }
 
-        public void BaseHPRegeneration()
+        public void BaseRegeneration()
         {
             for (int h = 0; h < map.Players.Count; h++)
             {
                 if (map.Players[h].Health < map.Players[h].MaxHealth)
                 {
                     map.Players[h].Health += 1;
+                }
+                if(map.Players[h].Mana < map.Players[h].MaxMana)
+                {
+                    map.Players[h].Mana += 2;
                 }
             }
         }
@@ -437,7 +451,7 @@ namespace Elysian_Fields
                         {
                             int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
                             map.Creatures[i].TimeOfLastAttack = currentTime;
-                            dmgDone.Add(new DamageObject(map.GetPlayerByID(targetID), dmgDealt, currentTime, currentTime + DamageObject.DamageDuration));
+                            dmgDone.Add(new DamageObject(map.GetPlayerByID(targetID), dmgDealt, false, currentTime, currentTime + DamageObject.DamageDuration));
 
                         }
                     }
@@ -473,50 +487,29 @@ namespace Elysian_Fields
                 spriteBatch.Draw(GetSpriteByID(map.Items[i].SpriteID), new Vector2((float)map.Items[i].Position.X, (float)map.Items[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             }
 
+            // Draw creatures names:
+            DrawCreatureNames();
+
+            // Draw player name:
+            DrawOutlinedString(font, map.Players[0].Name, new Vector2((float)map.Players[0].Position.X, (float)map.Players[0].Position.Y + Coordinates.Step), Color.White);
+
+            // Draw Creatures:
+            DrawCreatures();
+
+            // Draw player sprite:
             spriteBatch.Draw(GetSpriteByID(map.Players[0].SpriteID), new Vector2((float)map.Players[0].Position.X, (float)map.Players[0].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
-            spriteBatch.DrawString(font, map.Players[0].Name, new Vector2((float)map.Players[0].Position.X, (float)map.Players[0].Position.Y + Coordinates.Step), Color.Black);
-            for (int i = 0; i < map.Creatures.Count; i++)
-            {
-                if (map.Creatures[i].Health > 0)
-                {
-                    spriteBatch.Draw(GetSpriteByID(map.Creatures[i].SpriteID), new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
-                    spriteBatch.DrawString(font, map.Creatures[i].Name, new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y + Coordinates.Step), Color.Black);
-
-                    /* TODO: Draw all names on screen before drawing the monsters, that way their names won't block their friends' sprites */
-                    if (map.Creatures[i].ID == map.Players[0].TargetID)
-                    {
-                        // Draw attackbox
-                        spriteBatch.Draw(GetSpriteByID(3), new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
-                    }
-                }
-
-
-                // Draw damage dealt
-                int currentTime = (int) gameTime.TotalGameTime.TotalMilliseconds;
-                if (dmgDone.Count > 0)
-                {
-                    for (int f = 0; f < dmgDone.Count; f++)
-                    {
-                        DrawOutlinedString(font, dmgDone[f].damageDealt.ToString(), new Vector2((float)dmgDone[f].creature.Position.X + 2, (float)dmgDone[f].creature.Position.Y + (float)dmgDone[f].OffsetY(currentTime)), Color.Red);
-                    }
-
-                    for (int j = 0; j < dmgDone.Count; j++)
-                    {
-                        if (currentTime > dmgDone[j].EndTime)
-                        {
-                            dmgDone.RemoveAt(j);
-                        }
-                    }
-                }
-            }
 
             DrawSpells(gameTime);
+
+            // Draw damage dealt
+            DrawDamageDone(gameTime);
 
 
             spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step), Color.Black);
             spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 2), Color.Black);
-            spriteBatch.DrawString(font, "Strength: " + map.Players[0].TotalStrength(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 3), Color.Black);
-            spriteBatch.DrawString(font, "Defense: " + map.Players[0].TotalDefense(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 4), Color.Black);
+            spriteBatch.DrawString(font, "Mana: " + map.Players[0].Mana + " / " + map.Players[0].MaxMana, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 3), Color.Black);
+            spriteBatch.DrawString(font, "Strength: " + map.Players[0].TotalStrength(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 4), Color.Black);
+            spriteBatch.DrawString(font, "Defense: " + map.Players[0].TotalDefense(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * 5), Color.Black);
 
             spriteBatch.Draw(MouseCursors[currentMouse].Sprite, cursorPos, Color.White);
 
@@ -525,38 +518,92 @@ namespace Elysian_Fields
             base.Draw(gameTime);
         }
 
+        private void DrawCreatures()
+        {
+            for (int i = 0; i < map.Creatures.Count; i++)
+            {
+                if (map.Creatures[i].Health > 0)
+                {
+                    spriteBatch.Draw(GetSpriteByID(map.Creatures[i].SpriteID), new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+
+                    if (map.Creatures[i].ID == map.Players[0].TargetID)
+                    {
+                        // Draw attackbox
+                        spriteBatch.Draw(GetSpriteByID(3), new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                    }
+                }
+            }
+        }
+        private void DrawCreatureNames()
+        {
+            for (int i = 0; i < map.Creatures.Count; i++)
+            {
+                if (map.Creatures[i].Health > 0)
+                {
+                    DrawOutlinedString(font, map.Creatures[i].Name, new Vector2((float)map.Creatures[i].Position.X, (float)map.Creatures[i].Position.Y + Coordinates.Step), Color.White);
+                }
+            }
+        }
+        private void DrawDamageDone(GameTime gameTime)
+        {
+            int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+            if (dmgDone.Count > 0)
+            {
+                for (int f = 0; f < dmgDone.Count; f++)
+                {
+                    if (dmgDone[f].Healing)
+                    {
+                        DrawOutlinedString(font, dmgDone[f].damageDealt.ToString(), new Vector2((float)dmgDone[f].creature.Position.X + 2, (float)dmgDone[f].creature.Position.Y + (float)dmgDone[f].OffsetY(currentTime)), Color.LimeGreen);
+                    }
+                    else
+                    {
+                        DrawOutlinedString(font, dmgDone[f].damageDealt.ToString(), new Vector2((float)dmgDone[f].creature.Position.X + 2, (float)dmgDone[f].creature.Position.Y + (float)dmgDone[f].OffsetY(currentTime)), Color.Red);
+                    }
+                }
+
+                for (int j = 0; j < dmgDone.Count; j++)
+                {
+                    if (currentTime > dmgDone[j].EndTime)
+                    {
+                        dmgDone.RemoveAt(j);
+                    }
+                }
+            }
+        }
+
         private void DrawSpells(GameTime gameTime)
         {
             for(int i = 0; i < SpellDamage.Count; i++)
             {
-                DrawSpell(GetSpellByID(SpellDamage[i].ID), gameTime);
+                DrawSpell(GetSpellByID(SpellDamage[i].ID), gameTime, i);
             }
-
         }
-        private void DrawSpell(Spell spell, GameTime gameTime)
+
+        private void DrawSpell(Spell spell, GameTime gameTime, int index)
         {
-            if (SpellDamage.Count > 0)
+            if (gameTime.TotalGameTime.TotalMilliseconds < SpellDamage[index].EndTime)
             {
-                for (int f = 0; f < SpellDamage.Count; f++)
+                if (!spell.TargetSpell)
                 {
-                    if (gameTime.TotalGameTime.TotalMilliseconds < SpellDamage[f].EndTime)
+                    for (int i = 0; i < spell.Area.Length / 3; i++)
                     {
-                        for (int i = 0; i < spell.Area.Length / 3; i++)
+                        for (int j = 0; j < spell.Area.Length / 3; j++)
                         {
-                            for (int j = 0; j < spell.Area.Length / 3; j++)
+                            if (spell.Area[i + j])
                             {
-                                if (spell.Area[i + j])
-                                {
-                                    spriteBatch.Draw(spell.Sprite, new Vector2((float)SpellDamage[f].Position.X - Coordinates.Step + (i * Coordinates.Step), (float)SpellDamage[f].Position.Y - Coordinates.Step + (j * Coordinates.Step)), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
-                                }
+                                spriteBatch.Draw(spell.Sprite, new Vector2((float)SpellDamage[index].Position.X - Coordinates.Step + (i * Coordinates.Step), (float)SpellDamage[index].Position.Y - Coordinates.Step + (j * Coordinates.Step)), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
                             }
                         }
                     }
-                    else
-                    {
-                        SpellDamage.RemoveAt(f);
-                    }
                 }
+                else
+                {
+                    spriteBatch.Draw(spell.Sprite, new Vector2((float)SpellDamage[index].creature.Position.X, (float)SpellDamage[index].creature.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                }
+            }
+            else
+            {
+                SpellDamage.RemoveAt(index);
             }
         }
 

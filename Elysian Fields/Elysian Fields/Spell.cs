@@ -12,18 +12,25 @@ namespace Elysian_Fields
         public bool[] Area;
         public Texture2D Sprite;
         public int ID;
+        public int ManaCost;
+        public const int ExhaustionTime = 500; // Milliseconds
+        public bool HealSpell;
+        public bool TargetSpell;
 
         public Spell()
         {
             ID = -1;
         }
 
-        public Spell(bool[] area, int damage, Texture2D sprite, int id = 0)
+        public Spell(bool[] area, int damage, Texture2D sprite, int manacost = 0, bool healspell = false, bool targetspell = false, int id = 0)
         {
             Area = area;
             Damage = damage;
             Sprite = sprite;
             ID = id;
+            ManaCost = manacost;
+            HealSpell = healspell;
+            TargetSpell = targetspell;
         }
     }
 }

@@ -8,13 +8,14 @@ namespace Elysian_Fields
     class Player : Creature
     {
         public Equipment EquippedItems;
+        public int Exhaustion;
 
         public Player()
         {
             Name = "null";
             ID = -1;
         }
-        public Player(string name, Coordinates coordinates, int health = 1, int id = 0)
+        public Player(string name, Coordinates coordinates, int health = 1, int mana = 1, int id = 0)
         {
             /* Spelare */
             Name = name;
@@ -28,6 +29,8 @@ namespace Elysian_Fields
             EntityType = Entity.PlayerEntity;
             TargetID = -1;
             EquippedItems = new Equipment();
+            MaxMana = mana;
+            Mana = mana;
         }
 
         public int TotalStrength()
@@ -54,6 +57,26 @@ namespace Elysian_Fields
                 EquippedItems.LeftHand = new Item();
             else if (_ItemSlot == ItemSlot.RightHand)
                 EquippedItems.RightHand = new Item();
+        }
+
+        public bool IsExhausted(int CurrentTime)
+        {
+            if (CurrentTime - Exhaustion > Spell.ExhaustionTime)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool CastSpell(Spell spell, int CurrentTime)
+        {
+            if (!IsExhausted(CurrentTime) && Mana >= spell.ManaCost)
+            {
+                Mana -= spell.ManaCost;
+                Exhaustion = CurrentTime;
+                return true;
+            }
+            return false;
         }
     }
 }

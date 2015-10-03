@@ -19,6 +19,9 @@ namespace Elysian_Fields
         public int MaxHealth { get; set; }
         public int Health { get; set; }
 
+        public int MaxMana { get; set; }
+        public int Mana { get; set; }
+
         public int Strength { get; set; }
         public int Defense { get; set; }
 
