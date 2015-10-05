@@ -17,7 +17,7 @@ namespace Elysian_Fields
 
         public Coordinates Parent { get; set; }
 
-        public Coordinates() { }
+        public Coordinates() { X = 0; Y = 0; }
 
         public Coordinates(int x, int y) { X = x; Y = y; G = 0; H = 0; F = 0; }
 

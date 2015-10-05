@@ -151,7 +151,7 @@ namespace Elysian_Fields
 
                 map.Creatures.Clear();
                 map.Food.Clear();
-                map.ResetExperience();
+                //map.ResetExperience();
             }
             
             GenerateCreatures(Generator.Next(int.Parse(ConfigurationManager.AppSettings["minCreatures"]) + Difficulty, int.Parse(ConfigurationManager.AppSettings["maxCreatures"]) + (Difficulty * 2))); // Higher difficulty - more ghosts

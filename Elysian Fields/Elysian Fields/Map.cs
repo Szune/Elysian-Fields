@@ -16,7 +16,8 @@ namespace Elysian_Fields
         public List<Creature> Creatures = new List<Creature>();
         public List<Player> Players = new List<Player>();
         public List<Entity> Food = new List<Entity>();
-        public List<Item> Items = new List<Item>();
+        public List<Item> WorldItems = new List<Item>();
+        public List<Item> ItemList = new List<Item>();
 
         private DrawEngine draw;
 
@@ -177,14 +178,6 @@ namespace Elysian_Fields
             return dead;
         }
 
-        public void ResetExperience()
-        {
-            for (int i = 0; i < Creatures.Count; i++)
-            {
-                Creatures[i].Experience = 0;
-            }
-        }
-
         public int CreatureAttack(Creature creature, Player target)
         {
             if (CanAttack(creature, target))
@@ -192,7 +185,8 @@ namespace Elysian_Fields
                 int dmgDealt = target.ReceiveDamage(creature.Strength, target.TotalDefense());
                 if (target.Health < 1)
                 {
-                    creature.Experience += 1 + target.Experience;
+                    //creature.Experience += 1 + target.Experience;
+                    target.Die();
                 }
                 return dmgDealt;
             }
@@ -212,7 +206,7 @@ namespace Elysian_Fields
                         int dmgDealt = target.ReceiveDamage(player.TotalStrength(), target.Defense);
                         if (target.Health < 1)
                         {
-                            player.Experience += 1 + target.Experience;
+                            player.ReceiveExperience(target.Experience);
                             player.TargetID = -1;
                         }
                         return dmgDealt;
@@ -241,11 +235,11 @@ namespace Elysian_Fields
                                 Creature creature = GetCreatureByID(creatureID);
                                 if (creature.Health > 0)
                                 {
-                                    int DamageDealt = creature.ReceiveDamage(spell.Damage, 0);
+                                    int DamageDealt = creature.ReceiveDamage(spell.Damage + (player.MagicStrength * 2), 0);
                                     DamagedMonsters.Add(new DamageObject(creature, DamageDealt, spell.HealSpell, currentTime, currentTime + DamageObject.DamageDuration));
                                     if (creature.Health < 1)
                                     {
-                                        player.Experience += creature.Experience + 1;
+                                        player.ReceiveExperience(creature.Experience);
                                     }
                                 }
                             }
@@ -257,7 +251,7 @@ namespace Elysian_Fields
             {
                 if(spell.HealSpell)
                 {
-                    int damage = spell.Damage;
+                    int damage = spell.Damage + (player.MagicStrength * 2);
                     if (player.Health + damage > player.MaxHealth)
                     {
                         damage = player.MaxHealth - player.Health;
@@ -271,11 +265,11 @@ namespace Elysian_Fields
                 }
                 else
                 {
-                    int DamageDealt = target.ReceiveDamage(spell.Damage, 0);
+                    int DamageDealt = target.ReceiveDamage(spell.Damage + (player.MagicStrength * 2), 0);
                     DamagedMonsters.Add(new DamageObject(target, DamageDealt, spell.HealSpell, currentTime, currentTime + DamageObject.DamageDuration));
                     if (target.Health < 1)
                     {
-                        player.Experience += target.Experience + 1;
+                        player.ReceiveExperience(target.Experience);
                     }
                 }
             }
@@ -408,18 +402,23 @@ namespace Elysian_Fields
         {
             if (AdjacentToItem(Players[0], item) || haveToBeAdjacent == false)
             {
-                item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
-                Players[0].EquipItem(item, equipment.Name);
-
-                if (sourceEquipment != null)
+                if (item.WearSlot == equipment.Name || (item.WearSlot == ItemSlot.LeftHand && equipment.Name == ItemSlot.RightHand))
                 {
-                    Players[0].UnequipItem(sourceEquipment.Name);
+                    item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
+                    item.Slot = equipment.Name;
+                    Players[0].EquipItem(item, equipment.Name);
+
+                    if (sourceEquipment != null)
+                    {
+                        Players[0].UnequipItem(sourceEquipment.Name);
+                    }
                 }
             }
         }
 
         public void UnequipItem(Item item, UI equipment, Coordinates target)
         {
+            item.Slot = null;
             item.Position = new Coordinates(target.X, target.Y);
             Players[0].UnequipItem(equipment.Name);
         }

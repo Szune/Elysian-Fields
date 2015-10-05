@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Threading;
+using System.IO;
 
 namespace Elysian_Fields
 {
@@ -46,6 +47,8 @@ namespace Elysian_Fields
         private bool Walking = false;
 
         private bool regenerated = false;
+
+        private bool respawned = false;
         //Player player1;
 
 
@@ -71,13 +74,8 @@ namespace Elysian_Fields
             // TODO: Add your initialization logic here
 
             map = new Map(new Coordinates(Window.ClientBounds.Width, Window.ClientBounds.Height));
-            map.Players.Add(new Player("Aephirus", new Coordinates(0, 0), 150, 100, 1));
+            //map.Players.Add(new Player("Aephirus", new Coordinates(0, 0), 150, 100, 1, 1));
             //player1 = new Player("Aephirus", new Coordinates(0, 0));
-
-            for(int i = 0; i < 5; i++)
-            {
-                map.Creatures.Add(new Creature("Ghost" + i.ToString(), new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, 5, 100, i + 1));
-            }
 
             //this.IsMouseVisible = true;
 
@@ -96,47 +94,57 @@ namespace Elysian_Fields
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\player"), spriteList.Count + 1, Entity.CreatureEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\tile"), spriteList.Count + 1, Entity.TileEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\attackbox"), spriteList.Count + 1, Entity.UnknownEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\tile2"), spriteList.Count + 1, Entity.TileEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fistspell_ui"), spriteList.Count + 1, Entity.SpellEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fistspell_animation"), spriteList.Count + 1, Entity.SpellEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\healspell_ui"), spriteList.Count + 1, Entity.SpellEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\healspell_animation"), spriteList.Count + 1, Entity.SpellEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\goldenarmor"), spriteList.Count + 1, Entity.ItemEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\torso"), spriteList.Count + 1, Entity.UnknownEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\helmet"), spriteList.Count + 1, Entity.UnknownEntity));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\hornedhelmet"), spriteList.Count + 1, Entity.ItemEntity));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\player"), spriteList.Count + 1, Entity.CreatureEntity, "player"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\tile"), spriteList.Count + 1, Entity.TileEntity, "tile"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\attackbox"), spriteList.Count + 1, Entity.UnknownEntity, "attackbox"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\tile2"), spriteList.Count + 1, Entity.TileEntity, "tile2"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fistspell_ui"), spriteList.Count + 1, Entity.SpellEntity, "UI_FistSpell"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fistspell_animation"), spriteList.Count + 1, Entity.SpellEntity, "Spell_FistSpell"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\healspell_ui"), spriteList.Count + 1, Entity.SpellEntity, "UI_HealSpell"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\healspell_animation"), spriteList.Count + 1, Entity.SpellEntity, "Spell_HealSpell"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\goldenarmor"), spriteList.Count + 1, Entity.ItemEntity, "Golden Armor"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\helmet"), spriteList.Count + 1, Entity.UnknownEntity, ItemSlot.Helmet));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\torso"), spriteList.Count + 1, Entity.UnknownEntity, ItemSlot.Armor));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fist"), spriteList.Count + 1, Entity.UnknownEntity, ItemSlot.LeftHand));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fist"), spriteList.Count + 1, Entity.UnknownEntity, ItemSlot.RightHand));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\hornedhelmet"), spriteList.Count + 1, Entity.ItemEntity, "Horned Helmet"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\UI_background"), spriteList.Count + 1, Entity.UnknownEntity, "UI_background"));
 
-            map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 3 * Coordinates.Step), 1, 0, 60, 1));
-            map.Items.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 5 * Coordinates.Step), 1, 0, 60, 1));
-            map.Items.Add(new Item("Golden armor", new Coordinates(2 * Coordinates.Step, 2 * Coordinates.Step), 9, 0, 0, 25));
-            map.Items.Add(new Item("Horned helmet", new Coordinates(3 * Coordinates.Step, 2 * Coordinates.Step), 12, 0, 0, 20));
+            //map.ItemList.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 3 * Coordinates.Step), 1, 1, 60, 1));
+            map.ItemList.Add(new Item("Sword of magicnezz", ItemSlot.LeftHand, new Coordinates(3 * Coordinates.Step, 5 * Coordinates.Step), 1, 1, 60, 1));
+            map.ItemList.Add(new Item("Golden Armor", ItemSlot.Armor, new Coordinates(2 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Golden Armor"), GetSpriteIDByName("Golden Armor"), 0, 25));
+            map.ItemList.Add(new Item("Horned Helmet", ItemSlot.Helmet, new Coordinates(3 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Horned Helmet"), GetSpriteIDByName("Horned Helmet"), 0, 20));
 
             Spells.Add(new Spell(new bool[]
             {true, true, true,
             true, true, true,
             true, true, true}
-            , 50, GetSpriteByID(6), 20, false, false, 1));
+            , 50, GetSpriteByName("Spell_FistSpell"), 20, false, false, 1));
 
-            Spells.Add(new Spell(new bool[] { true }, 50, GetSpriteByID(8), 5, true, true, 2));
+            Spells.Add(new Spell(new bool[] { true }, 50, GetSpriteByName("Spell_HealSpell"), 5, true, true, 2));
 
-            listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 0), ItemSlot.LeftHand));
-            listUI.Add(new UI(Content.Load<Texture2D>("Graphics\\fist"), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 0), ItemSlot.RightHand));
-            listUI.Add(new UI(GetSpriteByID(11), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 29, Coordinates.Step * 0), ItemSlot.Helmet));
-            listUI.Add(new UI(GetSpriteByID(10), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 30, Coordinates.Step * 0), ItemSlot.Armor));
+            listUI.Add(new UI(GetSpriteByName(ItemSlot.LeftHand), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 0), ItemSlot.LeftHand));
+            listUI.Add(new UI(GetSpriteByName(ItemSlot.RightHand), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 0), ItemSlot.RightHand));
+            listUI.Add(new UI(GetSpriteByName(ItemSlot.Helmet), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 29, Coordinates.Step * 0), ItemSlot.Helmet));
+            listUI.Add(new UI(GetSpriteByName(ItemSlot.Armor), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 30, Coordinates.Step * 0), ItemSlot.Armor));
 
-            spellUI.Add(new UI(GetSpriteByID(5), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 1),"Fist", 1));
-            spellUI.Add(new UI(GetSpriteByID(7), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 1), "Heal", 2));
+            spellUI.Add(new UI(GetSpriteByName("UI_FistSpell"), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 1),"Fist", 1));
+            spellUI.Add(new UI(GetSpriteByName("UI_HealSpell"), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 1), "Heal", 2));
 
-            map.EquipItem(map.Items[0], GetListUIByItemSlot(ItemSlot.LeftHand), null, false);
-            map.EquipItem(map.Items[1], GetListUIByItemSlot(ItemSlot.RightHand), null, false);
-            map.EquipItem(map.Items[2], GetListUIByItemSlot(ItemSlot.Armor), null, false);
-            map.EquipItem(map.Items[3], GetListUIByItemSlot(ItemSlot.Helmet), null, false);
+            LoadWorld();
 
-            MouseCursors.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\MouseRegular"), 1, Entity.UnknownEntity));
-            MouseCursors.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\MouseDrag"), 2, Entity.UnknownEntity));
+            for (int i = 0; i < 5; i++)
+            {
+                map.Creatures.Add(new Creature("Ghost " + i.ToString(), new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, 25, 100, i + 1, 10, 150));
+            }
+
+            /*EquipItemFromAnywhere(map.Items[0], GetListUIByItemSlot(ItemSlot.LeftHand));
+            EquipItemFromAnywhere(map.Items[1], GetListUIByItemSlot(ItemSlot.RightHand));
+            EquipItemFromAnywhere(map.Items[2], GetListUIByItemSlot(ItemSlot.Armor));
+            EquipItemFromAnywhere(map.Items[3], GetListUIByItemSlot(ItemSlot.Helmet));*/
+
+            MouseCursors.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\MouseRegular"), 1, Entity.UnknownEntity, "MouseRegular"));
+            MouseCursors.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\MouseDrag"), 2, Entity.UnknownEntity, "MouseDrag"));
 
             map.Players[0].SpriteID = 1;
             
@@ -155,6 +163,8 @@ namespace Elysian_Fields
             font = Content.Load<SpriteFont>("EFont");
 
             Window.Title = "Elysian Fields";
+
+            //Window.Title = Utility.ExperienceNeededForLevel(1).ToString() + " " + Utility.ExperienceNeededForLevel(2).ToString() + " " + Utility.ExperienceNeededForLevel(3).ToString() + " " + Utility.ExperienceNeededForLevel(4).ToString() + " " + Utility.ExperienceNeededForLevel(5).ToString() + " " + Utility.ExperienceNeededForLevel(6).ToString() + " " + Utility.ExperienceNeededForLevel(7).ToString() + " " + Utility.ExperienceNeededForLevel(8).ToString() + " " + Utility.ExperienceNeededForLevel(9).ToString() + " " + Utility.ExperienceNeededForLevel(10).ToString() + " " + Utility.ExperienceNeededForLevel(100).ToString();
             // TODO: use this.Content to load your game content here
         }
 
@@ -175,7 +185,10 @@ namespace Elysian_Fields
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            {
+                SaveWorld();
                 Exit();
+            }
 
 
             // For debug purposes: Window.Title = gameTime.TotalGameTime.Seconds.ToString();
@@ -312,6 +325,7 @@ namespace Elysian_Fields
                 }
             }
 
+
             if (Mouse.GetState().LeftButton == ButtonState.Released && LeftClicked)
             {
                 int mx = Mouse.GetState().X, my = Mouse.GetState().Y;
@@ -333,6 +347,7 @@ namespace Elysian_Fields
                         {
                             UI targetEquipment = GetListUIByMousePosition(x, y);
                             UI sourceEquipment = GetListUIByMousePosition(dragItem.Position.X, dragItem.Position.Y);
+
                             if (targetEquipment.ID == -1)
                             {
                                 if (sourceEquipment.ID == -1)
@@ -341,18 +356,18 @@ namespace Elysian_Fields
                                 }
                                 else
                                 {
-                                    map.UnequipItem(dragItem, sourceEquipment, target);
+                                    UnequipItem(sourceEquipment, target);
                                 }
                             }
                             else
                             {
                                 if (sourceEquipment.ID == -1)
                                 {
-                                    map.EquipItem(dragItem, targetEquipment);
+                                    EquipItem(targetEquipment);
                                 }
                                 else
                                 {
-                                    map.EquipItem(dragItem, targetEquipment, sourceEquipment);
+                                    EquipItem(targetEquipment, sourceEquipment);
                                 }
                             }
                         }
@@ -394,12 +409,11 @@ namespace Elysian_Fields
 
             if (gameTime.TotalGameTime.Milliseconds % 1000 == 0)
             {
-                map.GeneratePaths();// <- Remove this to make monsters move
+                map.GeneratePaths();// <- Uncomment this to make monsters move
             }
 
             if (gameTime.TotalGameTime.Seconds % 2 == 0 && !regenerated)
             {
-                //Window.Title = "Hej" + gameTime.TotalGameTime.Seconds.ToString();
                 regenerated = true;
                 BaseRegeneration();
             }
@@ -408,7 +422,15 @@ namespace Elysian_Fields
                 regenerated = false;
             }
 
-            //Window.Title = (gameTime.TotalGameTime.Seconds % 2).ToString();
+            if(gameTime.TotalGameTime.Seconds % 10 == 0 && !respawned)
+            {
+                respawned = true;
+                Respawn();
+            }
+            else if(gameTime.TotalGameTime.Seconds % 10 == 1 && respawned)
+            {
+                respawned = false;
+            }
 
             if (gameTime.TotalGameTime.TotalMilliseconds - map.Players[0].TimeOfLastAttack > 1000)
             {
@@ -428,17 +450,74 @@ namespace Elysian_Fields
             base.Update(gameTime);
         }
 
+        public void Respawn()
+        {
+            for(int i = 0; i < map.Creatures.Count; i++)
+            {
+                if(map.Creatures[i].Health < 1)
+                {
+                    map.Creatures[i].Spawn();
+                }
+            }
+        }
+
+        private void EquipItem(UI targetEquipment, UI SourceEquipment = null)
+        {
+            if (SourceEquipment == null)
+            {
+                map.EquipItem(dragItem, targetEquipment);
+            }
+            else
+            {
+                map.EquipItem(dragItem, targetEquipment, SourceEquipment);
+            }
+        }
+
+        private void EquipItemFromAnywhere(Item item, UI targetEquipment, UI SourceEquipment = null)
+        {
+            if (SourceEquipment == null)
+            {
+                map.EquipItem(item, targetEquipment, null, false);
+            }
+            else
+            {
+                map.EquipItem(item, targetEquipment, SourceEquipment, false);
+            }
+        }
+
+        private void UnequipItem(UI SourceEquipment, Coordinates target)
+        {
+            SourceEquipment.Sprite = GetSpriteByName(SourceEquipment.Name);
+            map.UnequipItem(dragItem, SourceEquipment, target);
+        }
+
         public void BaseRegeneration()
         {
+            int HP_Regeneration = 5;
+            int MP_Regeneration = 10;
             for (int h = 0; h < map.Players.Count; h++)
             {
                 if (map.Players[h].Health < map.Players[h].MaxHealth)
                 {
-                    map.Players[h].Health += 1;
+                    if (map.Players[h].Health + HP_Regeneration > map.Players[h].MaxHealth)
+                    {
+                        map.Players[h].Health = map.Players[h].MaxHealth;
+                    }
+                    else
+                    {
+                        map.Players[h].Health += HP_Regeneration;
+                    }
                 }
                 if(map.Players[h].Mana < map.Players[h].MaxMana)
                 {
-                    map.Players[h].Mana += 2;
+                    if (map.Players[h].Mana + MP_Regeneration > map.Players[h].MaxMana)
+                    {
+                        map.Players[h].Mana = map.Players[h].MaxMana;
+                    }
+                    else
+                    {
+                        map.Players[h].Mana += 10;
+                    }
                 }
             }
         }
@@ -487,14 +566,19 @@ namespace Elysian_Fields
 
             DrawUI();
 
+            DrawEquipment();
+            
+
             for (int i = 0; i < map.Tiles.Count; i++)
             {
                 spriteBatch.Draw(GetSpriteByID(map.Tiles[i].SpriteID), new Vector2((float)map.Tiles[i].Position.X, (float)map.Tiles[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             }
 
-            for(int i = 0; i < map.Items.Count; i++)
+            for(int i = 0; i < map.WorldItems.Count; i++)
             {
-                spriteBatch.Draw(GetSpriteByID(map.Items[i].SpriteID), new Vector2((float)map.Items[i].Position.X, (float)map.Items[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                //if(GetListUIByMousePosition(map.MapItems[i].Position.X, map.MapItems[i].Position.Y).ID == -1)
+                if(map.WorldItems[i].Slot == null)
+                spriteBatch.Draw(GetSpriteByID(map.WorldItems[i].SpriteID), new Vector2((float)map.WorldItems[i].Position.X, (float)map.WorldItems[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             }
 
             // Draw creatures names:
@@ -515,9 +599,11 @@ namespace Elysian_Fields
             DrawDamageDone(gameTime);
 
             int startStep = (spellUI[spellUI.Count - 1].Position.Y / 32) + 1;
-            spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
             spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
             spriteBatch.DrawString(font, "Mana: " + map.Players[0].Mana + " / " + map.Players[0].MaxMana, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
+            spriteBatch.DrawString(font, "Level: " + map.Players[0].Level, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
+            spriteBatch.DrawString(font, "Experience: " + map.Players[0].Experience, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
+            spriteBatch.DrawString(font, "Magic Strength: " + map.Players[0].MagicStrength, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
             spriteBatch.DrawString(font, "Strength: " + map.Players[0].TotalStrength(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
             spriteBatch.DrawString(font, "Defense: " + map.Players[0].TotalDefense(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
 
@@ -526,6 +612,37 @@ namespace Elysian_Fields
             spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        private void DrawEquipment()
+        {
+            UI UI_Pos = GetListUIByItemSlot(ItemSlot.Helmet);
+            if (map.Players[0].EquippedItems.Helmet.ID != -1)
+            {
+                spriteBatch.Draw(GetSpriteByName("UI_background"), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(GetSpriteByID(map.Players[0].EquippedItems.Helmet.SpriteID), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
+
+            UI_Pos = GetListUIByItemSlot(ItemSlot.Armor);
+            if (map.Players[0].EquippedItems.Armor.ID != -1)
+            {
+                spriteBatch.Draw(GetSpriteByName("UI_background"), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(GetSpriteByID(map.Players[0].EquippedItems.Armor.SpriteID), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
+
+            UI_Pos = GetListUIByItemSlot(ItemSlot.LeftHand);
+            if (map.Players[0].EquippedItems.LeftHand.ID != -1)
+            {
+                spriteBatch.Draw(GetSpriteByName("UI_background"), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(GetSpriteByID(map.Players[0].EquippedItems.LeftHand.SpriteID), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
+
+            UI_Pos = GetListUIByItemSlot(ItemSlot.RightHand);
+            if (map.Players[0].EquippedItems.RightHand.ID != -1)
+            {
+                spriteBatch.Draw(GetSpriteByName("UI_background"), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(GetSpriteByID(map.Players[0].EquippedItems.RightHand.SpriteID), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
         }
 
         private void DrawCreatures()
@@ -652,6 +769,32 @@ namespace Elysian_Fields
             return spriteList[0].Sprite;
         }
 
+        public Texture2D GetSpriteByName(string Name)
+        {
+            for (int i = 0; i < spriteList.Count; i++)
+            {
+                if (spriteList[i].SpriteName == Name)
+                {
+                    return spriteList[i].Sprite;
+                }
+
+            }
+            return spriteList[0].Sprite;
+        }
+
+        public int GetSpriteIDByName(string Name)
+        {
+            for (int i = 0; i < spriteList.Count; i++)
+            {
+                if (spriteList[i].SpriteName == Name)
+                {
+                    return spriteList[i].ID;
+                }
+
+            }
+            return spriteList[0].ID;
+        }
+
         private Creature GetCreatureByMousePosition(int x, int y)
         {
             Rectangle tmpRect;
@@ -674,13 +817,13 @@ namespace Elysian_Fields
             Rectangle tmpRect;
             tmpRect.Height = 32;
             tmpRect.Width = 32;
-            for (int i = 0; i < map.Items.Count; i++)
+            for (int i = 0; i < map.WorldItems.Count; i++)
             {
-                tmpRect.X = map.Items[i].Position.X;
-                tmpRect.Y = map.Items[i].Position.Y;
+                tmpRect.X = map.WorldItems[i].Position.X;
+                tmpRect.Y = map.WorldItems[i].Position.Y;
                 if (tmpRect.Contains(x, y))
                 {
-                    return map.Items[i];
+                    return map.WorldItems[i];
                 }
             }
             return new Item();
@@ -730,6 +873,44 @@ namespace Elysian_Fields
             return new Spell();
         }
 
+        private Item GetItemByID(int ID)
+        {
+            for (int i = 0; i < map.WorldItems.Count; i++)
+            {
+                if (map.WorldItems[i].ID == ID) return map.WorldItems[i];
+            }
+
+            return new Item();
+        }
+
+        private Item GetItemFromListByID(int ID)
+        {
+            for (int i = 0; i < map.ItemList.Count; i++)
+            {
+                if (map.ItemList[i].ID == ID)
+                {
+                    return map.ItemList[i];
+                }
+            }
+
+            return new Item();
+        }
+
+        private Item CreateWorldItemFromListItem(int ID, Coordinates pos = null)
+        {
+            Item newItem;
+            for (int i = 0; i < map.ItemList.Count; i++)
+            {
+                if (map.ItemList[i].ID == ID)
+                {
+                    newItem = new Item(map.ItemList[i].Name, map.ItemList[i].WearSlot, pos, map.ItemList[i].SpriteID, map.ItemList[i].ID, map.ItemList[i].Strength, map.ItemList[i].Defense, map.ItemList[i].Visible);
+                    return newItem;
+                }
+            }
+
+            return new Item();
+        }
+
 
         private UI GetListUIByItemSlot(string _ItemSlot)
         {
@@ -743,6 +924,74 @@ namespace Elysian_Fields
             }
 
             return new UI();
+        }
+
+        private void SaveWorld()
+        {
+            string saveString = "";
+            StreamWriter writer = new StreamWriter("Content\\World.save");
+
+            for (int i = 0; i < map.Players.Count; i++)
+            {
+                saveString = map.Players[i].ID + "|" + map.Players[i].Name + "|" + map.Players[i].EquippedItems.ToString() + "|" + map.Players[i].Level + "|" + map.Players[i].Experience + "|" + map.Players[i].MaxHealth + "|" + map.Players[i].MaxMana + "|" + map.Players[i].MagicStrength + "|" + map.Players[i].ManaSpent + "|" + map.Players[i].Position.X + "|" + map.Players[i].Position.Y + "|" + map.Players[i].SpriteID;
+                writer.WriteLine(saveString);
+            }
+            writer.Close();
+        }
+        private void LoadWorld()
+        {
+            FileInfo file = new FileInfo("Content\\World.save");
+
+            if (file.Exists)
+            {
+                StreamReader read = new StreamReader("Content\\World.save");
+
+                string[] currentPlayer = read.ReadLine().Split("|".ToCharArray());
+                string[] EquippedItems = currentPlayer[2].Split(",".ToCharArray());
+
+                // TODO: Add the possibility of loading more than one player
+                map.Players.Add(new Player(currentPlayer[1], new Coordinates(int.Parse(currentPlayer[9]), int.Parse(currentPlayer[10])), int.Parse(currentPlayer[5]), int.Parse(currentPlayer[6]), int.Parse(currentPlayer[3]), int.Parse(currentPlayer[0])));
+                int currentID = map.Players.Count - 1;
+                map.Players[currentID].Experience = int.Parse(currentPlayer[4]);
+
+                if (int.Parse(EquippedItems[0]) > 0)
+                {
+                    map.WorldItems.Add(CreateWorldItemFromListItem(int.Parse(EquippedItems[0])));
+                    map.WorldItems[map.WorldItems.Count - 1].Slot = ItemSlot.LeftHand;
+                    map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.LeftHand).Position;
+                    map.Players[currentID].EquippedItems.LeftHand = map.WorldItems[map.WorldItems.Count - 1];
+                    GetListUIByItemSlot(ItemSlot.LeftHand).Sprite = GetSpriteByName("UI_background");
+                }
+                if (int.Parse(EquippedItems[1]) > 0)
+                {
+                    map.WorldItems.Add(CreateWorldItemFromListItem(int.Parse(EquippedItems[1])));
+                    map.WorldItems[map.WorldItems.Count - 1].Slot = ItemSlot.RightHand;
+                    map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.RightHand).Position;
+                    map.Players[currentID].EquippedItems.RightHand = map.WorldItems[map.WorldItems.Count - 1];
+                    GetListUIByItemSlot(ItemSlot.RightHand).Sprite = GetSpriteByName("UI_background");
+                }
+                if (int.Parse(EquippedItems[2]) > 0)
+                {
+                    map.WorldItems.Add(CreateWorldItemFromListItem(int.Parse(EquippedItems[2])));
+                    map.WorldItems[map.WorldItems.Count - 1].Slot = ItemSlot.Helmet;
+                    map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.Helmet).Position;
+                    map.Players[currentID].EquippedItems.Helmet = map.WorldItems[map.WorldItems.Count - 1];
+                    GetListUIByItemSlot(ItemSlot.Helmet).Sprite = GetSpriteByName("UI_background");
+                }
+                if (int.Parse(EquippedItems[3]) > 0)
+                {
+                    map.WorldItems.Add(CreateWorldItemFromListItem(int.Parse(EquippedItems[3])));
+                    map.WorldItems[map.WorldItems.Count - 1].Slot = ItemSlot.Armor;
+                    map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.Armor).Position;
+                    map.Players[currentID].EquippedItems.Armor = map.WorldItems[map.WorldItems.Count - 1];
+                    GetListUIByItemSlot(ItemSlot.Armor).Sprite = GetSpriteByName("UI_background");
+                }
+                map.Players[currentID].ManaSpent = int.Parse(currentPlayer[8]);
+                map.Players[currentID].MagicStrength = int.Parse(currentPlayer[7]);
+                //saveString = Players[i].ID + "|" + Players[i].Name + "|" + Players[i].EquippedItems.ToString() + "|" + Players[i].Level + "|" + Players[i].Experience + "|" + Players[i].MaxHealth + "|" + Players[i].MaxMana + "|" + Players[i].MagicStrength + "|" + Players[i].ManaSpent + "|" + Players[i].Position.X + "|" + Players[i].Position.Y + "|" + Players[i].SpriteID;
+
+                read.Close();
+            }
         }
     }
 }

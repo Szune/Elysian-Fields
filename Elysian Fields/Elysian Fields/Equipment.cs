@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 
 namespace Elysian_Fields
 {
@@ -30,6 +31,15 @@ namespace Elysian_Fields
 
         public void EquipItem(Item item, string _ItemSlot)
         {
+            /*ItemSlot hej = new ItemSlot();
+            foreach (var prop in typeof(ItemSlot).GetProperties())
+            {
+                if (prop.CanRead)
+                {
+                    var value = prop.GetValue(hej, null) as string;
+                }
+            }*/ // The code above will loop through all the constants of the ItemSlot class, might be useful if we make changes to the Equipment class
+
             if (_ItemSlot == ItemSlot.LeftHand)
             {
                 LeftHand = item;
@@ -66,6 +76,11 @@ namespace Elysian_Fields
             {
                 Helmet = new Item();
             }
+        }
+
+        public override string ToString()
+        {
+            return LeftHand.ID + "," + RightHand.ID + "," + Helmet.ID + "," + Armor.ID;
         }
 
     }

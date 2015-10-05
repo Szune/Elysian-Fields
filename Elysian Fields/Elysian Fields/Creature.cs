@@ -16,8 +16,13 @@ namespace Elysian_Fields
 
         public int TargetID { get; set; }
 
+        public int Level { get; set; }
+
         public int MaxHealth { get; set; }
         public int Health { get; set; }
+
+        public int MagicStrength { get; set; }
+
 
         public int MaxMana { get; set; }
         public int Mana { get; set; }
@@ -34,7 +39,7 @@ namespace Elysian_Fields
         }
         public Creature(string name, int id = -1) { Name = name; MaxHealth = 1; Health = 1; ID = id; }
 
-        public Creature(string name, Coordinates coordinates, int targetID, int strength = 1, int health = 1, int id = 0, int defense = 0)
+        public Creature(string name, Coordinates coordinates, int targetID, int strength = 1, int health = 1, int id = 0, int defense = 0, int experience = 1)
         {
             /* Spöken */
             Name = name;
@@ -50,6 +55,7 @@ namespace Elysian_Fields
             Strength = strength;
             TimeOfLastAttack = 0;
             Defense = defense;
+            Experience = experience;
         }
 
         public void Spawn()
@@ -65,12 +71,50 @@ namespace Elysian_Fields
             Random generator = new Random();
             int DamageDone = generator.Next(0, strength) - generator.Next(0, defense);
             if (DamageDone < 0) DamageDone = 0;
-            Health -= DamageDone;
+            if (Health - DamageDone < 0)
+            {
+                DamageDone = DamageDone - (DamageDone - Health);
+                Health = 0;
+            }
+            else
+            {
+                Health -= DamageDone;
+            }
             if(Health < 1)
             {
                 Die();
             }
             return DamageDone;
+        }
+
+        public void ReceiveExperience(int experience)
+        {
+            Experience += experience;
+            while(IsExperienceEnoughToLevelUp())
+            {
+                LevelUp();
+            }
+        }
+
+        public bool IsExperienceEnoughToLevelUp()
+        {
+            if(Experience >= Utility.ExperienceNeededForLevel(Level)) 
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public void LevelUp()
+        {
+            Level += 1;
+            MaxHealth += 15;
+            Health = MaxHealth;
+            MaxMana += 15;
+            Mana = MaxMana;
         }
 
         public bool hasPath()
@@ -116,6 +160,7 @@ namespace Elysian_Fields
 
         public void Die()
         {
+            Health = 0;
             Visible = false;
         }
     }

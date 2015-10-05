@@ -25,10 +25,6 @@ namespace Elysian_Fields
         public const int UnknownEntity = 5;
         public const int SpellEntity = 6;
 
-        
-
-
-
 
         public int ID { get; set; }
 

@@ -10,6 +10,8 @@ namespace Elysian_Fields
 
         public int Strength;
         public int Defense;
+        public string Slot = null;
+        public string WearSlot;
 
         public Item()
         {
@@ -17,16 +19,17 @@ namespace Elysian_Fields
             Strength = 0;
             Defense = 0;
         }
-        public Item(string name, Coordinates pos, int spriteid, int tileID = 0, int strength = 0, int defense = 0, bool visible = true)
+        public Item(string name, string wearslot, Coordinates pos, int spriteid, int id = 0, int strength = 0, int defense = 0, bool visible = true)
         {
             Name = name;
-            ID = tileID;
+            ID = id;
             Position = pos;
             Visible = visible;
             EntityType = Entity.ItemEntity;
             SpriteID = spriteid;
             Strength = strength;
             Defense = defense;
+            WearSlot = wearslot;
         }
     }
 }
