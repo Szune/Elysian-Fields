@@ -11,6 +11,7 @@ namespace Elysian_Fields
         public const string RightHand = "RHand";
         public const string Armor = "Armor";
         public const string Helmet = "Helmet";
+        public const string Legs = "Legs";
 
         public ItemSlot()
         {

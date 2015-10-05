@@ -65,8 +65,6 @@ namespace Elysian_Fields_Map_Editor
             LoadMap("Content\\fields.map");
 
             Window.Title = "Elysian Fields - Map Editor";
-
-            // TODO: use this.Content to load your game content here
         }
 
         /// <summary>
@@ -214,8 +212,6 @@ namespace Elysian_Fields_Map_Editor
             font = Content.Load<SpriteFont>("EFont");
 
             GraphicsDevice.Clear(Color.ForestGreen);
-
-            // TODO: Add your drawing code here
 
 
             spriteBatch.Begin();

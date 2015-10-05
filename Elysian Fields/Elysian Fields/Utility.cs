@@ -16,7 +16,6 @@ namespace Elysian_Fields
         }
         public static int ManaSpentNeededForMagicStrength(double level)
         {
-            // TODO: Change to its own formula
             double neededExp = level * 100 + (Math.Pow(level, 2) * 50);
             return (int)neededExp;
         }

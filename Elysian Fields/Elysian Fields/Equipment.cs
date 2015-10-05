@@ -12,6 +12,7 @@ namespace Elysian_Fields
         public Item RightHand = new Item();
         public Item Armor = new Item();
         public Item Helmet = new Item();
+        public Item Legs = new Item();
 
 
         public Equipment()
@@ -21,12 +22,12 @@ namespace Elysian_Fields
 
         public int TotalStrength()
         {
-            return LeftHand.Strength + RightHand.Strength + Armor.Strength + Helmet.Strength;
+            return LeftHand.Strength + RightHand.Strength + Armor.Strength + Helmet.Strength + Legs.Strength;
         }
 
         public int TotalDefense()
         {
-            return LeftHand.Defense + RightHand.Defense + Armor.Defense + Helmet.Defense;
+            return LeftHand.Defense + RightHand.Defense + Armor.Defense + Helmet.Defense + Legs.Defense;
         }
 
         public void EquipItem(Item item, string _ItemSlot)
@@ -56,6 +57,10 @@ namespace Elysian_Fields
             {
                 Helmet = item;
             }
+            else if (_ItemSlot == ItemSlot.Legs)
+            {
+                Legs = item;
+            }
         }
 
         public void UnequipItem(string _ItemSlot)
@@ -76,11 +81,15 @@ namespace Elysian_Fields
             {
                 Helmet = new Item();
             }
+            else if (_ItemSlot == ItemSlot.Legs)
+            {
+                Legs = new Item();
+            }
         }
 
         public override string ToString()
         {
-            return LeftHand.ID + "," + RightHand.ID + "," + Helmet.ID + "," + Armor.ID;
+            return LeftHand.ID + "," + RightHand.ID + "," + Helmet.ID + "," + Armor.ID + "," + Legs.ID;
         }
 
     }

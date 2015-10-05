@@ -71,7 +71,6 @@ namespace Elysian_Fields
         /// </summary>
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
 
             map = new Map(new Coordinates(Window.ClientBounds.Width, Window.ClientBounds.Height));
             //map.Players.Add(new Player("Aephirus", new Coordinates(0, 0), 150, 100, 1, 1));
@@ -109,11 +108,16 @@ namespace Elysian_Fields
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fist"), spriteList.Count + 1, Entity.UnknownEntity, ItemSlot.RightHand));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\hornedhelmet"), spriteList.Count + 1, Entity.ItemEntity, "Horned Helmet"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\UI_background"), spriteList.Count + 1, Entity.UnknownEntity, "UI_background"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\magicsword"), spriteList.Count + 1, Entity.ItemEntity, "Magic Sword"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\ghost"), spriteList.Count + 1, Entity.CreatureEntity, "ghost"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\legs"), spriteList.Count + 1, Entity.UnknownEntity, ItemSlot.Legs));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\masterlegs"), spriteList.Count + 1, Entity.ItemEntity, "Master Legs"));
 
             //map.ItemList.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 3 * Coordinates.Step), 1, 1, 60, 1));
-            map.ItemList.Add(new Item("Sword of magicnezz", ItemSlot.LeftHand, new Coordinates(3 * Coordinates.Step, 5 * Coordinates.Step), 1, 1, 60, 1));
-            map.ItemList.Add(new Item("Golden Armor", ItemSlot.Armor, new Coordinates(2 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Golden Armor"), GetSpriteIDByName("Golden Armor"), 0, 25));
-            map.ItemList.Add(new Item("Horned Helmet", ItemSlot.Helmet, new Coordinates(3 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Horned Helmet"), GetSpriteIDByName("Horned Helmet"), 0, 20));
+            map.ItemList.Add(new Item("Magic Sword", ItemSlot.LeftHand, new Coordinates(3 * Coordinates.Step, 5 * Coordinates.Step), GetSpriteIDByName("Magic Sword"), GetSpriteIDByName("Magic Sword"), 60, 1));
+            map.ItemList.Add(new Item("Golden Armor", ItemSlot.Armor, new Coordinates(2 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Golden Armor"), GetSpriteIDByName("Golden Armor"), 0, 15));
+            map.ItemList.Add(new Item("Horned Helmet", ItemSlot.Helmet, new Coordinates(3 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Horned Helmet"), GetSpriteIDByName("Horned Helmet"), 0, 12));
+            map.ItemList.Add(new Item("Master Legs", ItemSlot.Legs, new Coordinates(3 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Master Legs"), GetSpriteIDByName("Master Legs"), 0, 10));
 
             Spells.Add(new Spell(new bool[]
             {true, true, true,
@@ -127,6 +131,7 @@ namespace Elysian_Fields
             listUI.Add(new UI(GetSpriteByName(ItemSlot.RightHand), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 0), ItemSlot.RightHand));
             listUI.Add(new UI(GetSpriteByName(ItemSlot.Helmet), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 29, Coordinates.Step * 0), ItemSlot.Helmet));
             listUI.Add(new UI(GetSpriteByName(ItemSlot.Armor), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 30, Coordinates.Step * 0), ItemSlot.Armor));
+            listUI.Add(new UI(GetSpriteByName(ItemSlot.Legs), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 31, Coordinates.Step * 0), ItemSlot.Legs));
 
             spellUI.Add(new UI(GetSpriteByName("UI_FistSpell"), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 1),"Fist", 1));
             spellUI.Add(new UI(GetSpriteByName("UI_HealSpell"), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 1), "Heal", 2));
@@ -135,8 +140,10 @@ namespace Elysian_Fields
 
             for (int i = 0; i < 5; i++)
             {
-                map.Creatures.Add(new Creature("Ghost " + i.ToString(), new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, 25, 100, i + 1, 10, 150));
+                map.Creatures.Add(new Creature("Ghost", new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, 25, 100, i + 1, 10, 150));
             }
+
+            map.WorldItems.Add(CreateWorldItemFromListItem(GetItemFromListByName("Master Legs").ID, new Coordinates(Coordinates.Step * 5, Coordinates.Step * 5)));
 
             /*EquipItemFromAnywhere(map.Items[0], GetListUIByItemSlot(ItemSlot.LeftHand));
             EquipItemFromAnywhere(map.Items[1], GetListUIByItemSlot(ItemSlot.RightHand));
@@ -150,7 +157,7 @@ namespace Elysian_Fields
             
             for(int i = 0; i < map.Creatures.Count; i++)
             {
-                map.Creatures[i].SpriteID = 1;
+                map.Creatures[i].SpriteID = GetSpriteIDByName("ghost");
             }
 
             /*map.Tiles.Add(new Tile("grass", 2, new Coordinates(Coordinates.Step * 4, Coordinates.Step * 2), 1, true));
@@ -165,7 +172,6 @@ namespace Elysian_Fields
             Window.Title = "Elysian Fields";
 
             //Window.Title = Utility.ExperienceNeededForLevel(1).ToString() + " " + Utility.ExperienceNeededForLevel(2).ToString() + " " + Utility.ExperienceNeededForLevel(3).ToString() + " " + Utility.ExperienceNeededForLevel(4).ToString() + " " + Utility.ExperienceNeededForLevel(5).ToString() + " " + Utility.ExperienceNeededForLevel(6).ToString() + " " + Utility.ExperienceNeededForLevel(7).ToString() + " " + Utility.ExperienceNeededForLevel(8).ToString() + " " + Utility.ExperienceNeededForLevel(9).ToString() + " " + Utility.ExperienceNeededForLevel(10).ToString() + " " + Utility.ExperienceNeededForLevel(100).ToString();
-            // TODO: use this.Content to load your game content here
         }
 
         /// <summary>
@@ -192,8 +198,6 @@ namespace Elysian_Fields
 
 
             // For debug purposes: Window.Title = gameTime.TotalGameTime.Seconds.ToString();
-
-            // TODO: Add your update logic here
 
 
 
@@ -559,7 +563,6 @@ namespace Elysian_Fields
            
             GraphicsDevice.Clear(Color.ForestGreen);
 
-            // TODO: Add your drawing code here
 
 
             spriteBatch.Begin();
@@ -642,6 +645,13 @@ namespace Elysian_Fields
             {
                 spriteBatch.Draw(GetSpriteByName("UI_background"), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
                 spriteBatch.Draw(GetSpriteByID(map.Players[0].EquippedItems.RightHand.SpriteID), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
+
+            UI_Pos = GetListUIByItemSlot(ItemSlot.Legs);
+            if (map.Players[0].EquippedItems.Legs.ID != -1)
+            {
+                spriteBatch.Draw(GetSpriteByName("UI_background"), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(GetSpriteByID(map.Players[0].EquippedItems.Legs.SpriteID), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             }
         }
 
@@ -883,11 +893,24 @@ namespace Elysian_Fields
             return new Item();
         }
 
-        private Item GetItemFromListByID(int ID)
+        private Item GetItemFromListByID(int ItemID)
         {
             for (int i = 0; i < map.ItemList.Count; i++)
             {
-                if (map.ItemList[i].ID == ID)
+                if (map.ItemList[i].ID == ItemID)
+                {
+                    return map.ItemList[i];
+                }
+            }
+
+            return new Item();
+        }
+
+        private Item GetItemFromListByName(string ItemName)
+        {
+            for (int i = 0; i < map.ItemList.Count; i++)
+            {
+                if (map.ItemList[i].Name == ItemName)
                 {
                     return map.ItemList[i];
                 }
@@ -985,6 +1008,14 @@ namespace Elysian_Fields
                     map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.Armor).Position;
                     map.Players[currentID].EquippedItems.Armor = map.WorldItems[map.WorldItems.Count - 1];
                     GetListUIByItemSlot(ItemSlot.Armor).Sprite = GetSpriteByName("UI_background");
+                }
+                if (int.Parse(EquippedItems[4]) > 0)
+                {
+                    map.WorldItems.Add(CreateWorldItemFromListItem(int.Parse(EquippedItems[4])));
+                    map.WorldItems[map.WorldItems.Count - 1].Slot = ItemSlot.Legs;
+                    map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.Legs).Position;
+                    map.Players[currentID].EquippedItems.Legs = map.WorldItems[map.WorldItems.Count - 1];
+                    GetListUIByItemSlot(ItemSlot.Legs).Sprite = GetSpriteByName("UI_background");
                 }
                 map.Players[currentID].ManaSpent = int.Parse(currentPlayer[8]);
                 map.Players[currentID].MagicStrength = int.Parse(currentPlayer[7]);
