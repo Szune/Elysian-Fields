@@ -12,6 +12,11 @@ namespace Elysian_Fields
         public int Defense;
         public string Slot = null;
         public string WearSlot;
+        public Backpack Container;
+        public Backpack Parent;
+        public int ParentID = -1;
+        public int ParentItemID = -1;
+        public bool isEmpty = true;
 
         public Item()
         {
@@ -30,6 +35,13 @@ namespace Elysian_Fields
             Strength = strength;
             Defense = defense;
             WearSlot = wearslot;
+            if (wearslot == ItemSlot.Bag)
+            {
+                Container = new Backpack();
+                Container.ID = this.ID;
+                Container.ItemID = spriteid;
+            }
+            Parent = new Backpack();
         }
     }
 }

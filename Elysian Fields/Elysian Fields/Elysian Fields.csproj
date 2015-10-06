@@ -39,12 +39,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AI.cs" />
+    <Compile Include="Animation.cs" />
+    <Compile Include="Backpack.cs" />
     <Compile Include="Coordinates.cs" />
     <Compile Include="Creature.cs" />
     <Compile Include="DamageObject.cs" />
     <Compile Include="DrawEngine.cs" />
     <Compile Include="ElysianGame.cs" />
-    <Compile Include="Engine.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="Equipment.cs" />
     <Compile Include="Highscore.cs" />
@@ -151,6 +152,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\Graphics\masterlegs.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\Graphics\backpack.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\Graphics\ui_bag.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\Graphics\backpackbackgrund.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

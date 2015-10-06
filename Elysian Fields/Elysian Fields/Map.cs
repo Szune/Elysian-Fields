@@ -19,14 +19,6 @@ namespace Elysian_Fields
         public List<Item> WorldItems = new List<Item>();
         public List<Item> ItemList = new List<Item>();
 
-        private DrawEngine draw;
-
-        public int CreatureCount;
-
-        public int AddSuperPowerSteps;
-
-        public bool FriendlyFire;
-
         private Random Generator = new Random();
 
         private Coordinates windowSize;
@@ -34,19 +26,6 @@ namespace Elysian_Fields
         public Map() { }
 
         public Map(Coordinates WindowSize) { windowSize = WindowSize; }
-
-        public Map(DrawEngine drawEngine, int SuperPowerStepsPerFood, bool friendlyFire)
-        {
-            draw = drawEngine;
-            //Creatures.Add(new Creature("P", new Coordinates(0, 0), 1, ConsoleColor.Green, 1)); <- old way of doing it
-            //Players.Add(new Player("P", new Coordinates(0, 0), ConsoleColor.Green, 1, 1));
-
-            /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
-            if (bool.Parse(ConfigurationManager.AppSettings["PlayerDebug"])) { Players[0].SuperPowerSteps = 15000; }
-
-            AddSuperPowerSteps = SuperPowerStepsPerFood;
-            FriendlyFire = friendlyFire;
-        }
 
         public void GeneratePathFromCreature(Creature FromCreature, Coordinates Target)
         {
@@ -287,18 +266,6 @@ namespace Elysian_Fields
             return false;
         }
 
-        public bool Eat(Player creature, Coordinates step)
-        {
-            /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
-            if (IsTileFood(step))
-            {
-                SetFoodEaten(step);
-                draw.MoveObject(creature, step);
-                creature.SuperPowerSteps += AddSuperPowerSteps;
-            }
-            return true;
-        }
-
         public void SetFoodEaten(Coordinates step)
         {
             for (int i = 0; i < Food.Count; i++)
@@ -402,15 +369,18 @@ namespace Elysian_Fields
         {
             if (AdjacentToItem(Players[0], item) || haveToBeAdjacent == false)
             {
-                if (item.WearSlot == equipment.Name || (item.WearSlot == ItemSlot.LeftHand && equipment.Name == ItemSlot.RightHand))
+                if (Players[0].EquippedItems.IsItemSlotEmpty(equipment.Name))
                 {
-                    item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
-                    item.Slot = equipment.Name;
-                    Players[0].EquipItem(item, equipment.Name);
-
-                    if (sourceEquipment != null)
+                    if (item.WearSlot == equipment.Name || (item.WearSlot == ItemSlot.LeftHand && equipment.Name == ItemSlot.RightHand))
                     {
-                        Players[0].UnequipItem(sourceEquipment.Name);
+                        item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
+                        item.Slot = equipment.Name;
+                        Players[0].EquipItem(item, equipment.Name);
+
+                        if (sourceEquipment != null)
+                        {
+                            Players[0].UnequipItem(sourceEquipment.Name);
+                        }
                     }
                 }
             }
@@ -421,6 +391,42 @@ namespace Elysian_Fields
             item.Slot = null;
             item.Position = new Coordinates(target.X, target.Y);
             Players[0].UnequipItem(equipment.Name);
+        }
+
+        public void ThrowItemFromBag(Item item, Coordinates target)
+        {
+            item.Slot = null;
+            item.Position = new Coordinates(target.X, target.Y);
+            item.Parent.RemoveItem(item);
+        }
+
+        public void ThrowItemToBag(Item item, Backpack Bag, Coordinates target, UI SourceEquipment = null, Backpack Parent = null)
+        {
+            if (Parent != null)
+            {
+                Parent.RemoveItem(item);
+            }
+            item.Slot = null;
+            item.Position = new Coordinates(target.X, target.Y);
+            Bag.AddItem(item);
+            if (SourceEquipment != null)
+            {
+                Players[0].UnequipItem(SourceEquipment.Name);
+            }
+        }
+
+        public void EquipItemFromBag(Item item, UI equipment)
+        {
+            if (Players[0].EquippedItems.IsItemSlotEmpty(equipment.Name))
+            {
+                if (item.WearSlot == equipment.Name || (item.WearSlot == ItemSlot.LeftHand && equipment.Name == ItemSlot.RightHand))
+                {
+                    item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
+                    item.Slot = equipment.Name;
+                    item.Parent.RemoveItem(item);
+                    Players[0].EquipItem(item, equipment.Name);
+                }
+            }
         }
 
         public bool IsTileWalkable(Coordinates Tile)
@@ -558,59 +564,6 @@ namespace Elysian_Fields
         public bool OutOfBoundaries(Coordinates Coordinates)
         {
             return !(Coordinates.X >= 0 && Coordinates.Y >= 0 && Coordinates.X < windowSize.X && Coordinates.Y < windowSize.Y);
-        }
-
-
-        public void DrawTiles()
-        {
-            for (int i = 0; i < Tiles.Count; i++)
-            {
-                if (Tiles[i].Visible)
-                {
-                    draw.DrawObject(Tiles[i]);
-                }
-            }
-        }
-
-        public void DrawCreatures()
-        {
-            for (int i = 0; i < Creatures.Count; i++)
-            {
-                if (Creatures[i].Health > 0)
-                {
-                    draw.DrawObject(Creatures[i]);
-                }
-            }
-        }
-
-        public void DrawPlayers()
-        {
-            for (int i = 0; i < Players.Count; i++)
-            {
-                if (Players[i].Health > 0)
-                {
-                    draw.DrawObject(Players[i]);
-                }
-            }
-        }
-
-        public void DrawFood()
-        {
-            for (int i = 0; i < Food.Count; i++)
-            {
-                if (Food[i].Visible)
-                {
-                    draw.DrawObject(Food[i]);
-                }
-            }
-        }
-
-        public void DrawMap()
-        {
-            DrawTiles();
-            DrawCreatures();
-            DrawFood();
-            DrawPlayers();
         }
     }
 }

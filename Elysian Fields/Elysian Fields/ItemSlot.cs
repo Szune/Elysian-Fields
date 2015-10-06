@@ -12,6 +12,7 @@ namespace Elysian_Fields
         public const string Armor = "Armor";
         public const string Helmet = "Helmet";
         public const string Legs = "Legs";
+        public const string Bag = "Bag";
 
         public ItemSlot()
         {

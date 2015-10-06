@@ -13,6 +13,7 @@ namespace Elysian_Fields
         public Item Armor = new Item();
         public Item Helmet = new Item();
         public Item Legs = new Item();
+        public Item Bag = new Item();
 
 
         public Equipment()
@@ -28,6 +29,41 @@ namespace Elysian_Fields
         public int TotalDefense()
         {
             return LeftHand.Defense + RightHand.Defense + Armor.Defense + Helmet.Defense + Legs.Defense;
+        }
+
+        public bool IsItemSlotEmpty(string _ItemSlot)
+        {
+            if (_ItemSlot == ItemSlot.LeftHand)
+            {
+                if (LeftHand.ID == -1)
+                    return true;
+            }
+            else if (_ItemSlot == ItemSlot.RightHand)
+            {
+                if (RightHand.ID == -1)
+                    return true;
+            }
+            else if (_ItemSlot == ItemSlot.Armor)
+            {
+                if (Armor.ID == -1)
+                    return true;
+            }
+            else if (_ItemSlot == ItemSlot.Helmet)
+            {
+                if (Helmet.ID == -1)
+                    return true;
+            }
+            else if (_ItemSlot == ItemSlot.Legs)
+            {
+                if (Legs.ID == -1)
+                    return true;
+            }
+            else if (_ItemSlot == ItemSlot.Bag)
+            {
+                if (Bag.ID == -1)
+                    return true;
+            }
+            return false;
         }
 
         public void EquipItem(Item item, string _ItemSlot)
@@ -61,6 +97,10 @@ namespace Elysian_Fields
             {
                 Legs = item;
             }
+            else if (_ItemSlot == ItemSlot.Bag)
+            {
+                Bag = item;
+            }
         }
 
         public void UnequipItem(string _ItemSlot)
@@ -85,11 +125,65 @@ namespace Elysian_Fields
             {
                 Legs = new Item();
             }
+            else if (_ItemSlot == ItemSlot.Bag)
+            {
+                Bag = new Item();
+            }
         }
 
         public override string ToString()
         {
-            return LeftHand.ID + "," + RightHand.ID + "," + Helmet.ID + "," + Armor.ID + "," + Legs.ID;
+            bool first = true;
+            string items = "Items:";
+            string bags = "Bags:";
+            // TODO: Send all items in bag and in their bags and in their bags as well (Bag.Container.GetItemsSafe() until all bags are accounted for)
+            if (Bag.Container != null)
+            {
+                List<Item> AllItems = new List<Item>();
+                AllItems = Bag.Container.GetAllItemsFromNestedBags(Bag);
+                bags += Bag.SpriteID + ";" + Bag.ID + ";-1";
+
+                for (int i = 0; i < AllItems.Count; i++)
+                {
+                    if (AllItems[i].WearSlot == ItemSlot.Bag)
+                    {
+                        bags += "+" + AllItems[i].SpriteID + ";" + AllItems[i].ID + ";" + AllItems[i].ParentID;
+                    }
+                }
+
+                for (int i = 0; i < AllItems.Count; i++)
+                {
+                    if (AllItems[i].Container == null)
+                    {
+                        if(!first)
+                        {
+                            items += "+" +AllItems[i].SpriteID + ";" + AllItems[i].ParentID;
+                        }
+                        else
+                        {
+                            items += AllItems[i].SpriteID + ";" + AllItems[i].ParentID;
+                            first = false;
+                        }                       
+                    }
+                }
+            }
+            bags += ".";
+
+            if (bags != "Bags:.")
+            {
+                return LeftHand.SpriteID + "," + RightHand.SpriteID + "," + Helmet.SpriteID + "," + Armor.SpriteID + "," + Legs.SpriteID + "," + bags + items;
+            }
+            else
+            {
+                if (Bag.ID != -1)
+                {
+                    return LeftHand.SpriteID + "," + RightHand.SpriteID + "," + Helmet.SpriteID + "," + Armor.SpriteID + "," + Legs.SpriteID + ",Bags:" + Bag.SpriteID + ";" + Bag.ID + ".Items:-1";
+                }
+                else
+                {
+                    return LeftHand.SpriteID + "," + RightHand.SpriteID + "," + Helmet.SpriteID + "," + Armor.SpriteID + "," + Legs.SpriteID + ",Bags:-1.Items:-1";
+                }
+            }
         }
 
     }

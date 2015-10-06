@@ -23,8 +23,10 @@ namespace Elysian_Fields
         List<DamageObject> dmgDone = new List<DamageObject>();
         List<Spell> Spells = new List<Spell>();
         List<UI> spellUI = new List<UI>();
-
+        List<Backpack> OpenBackpacks = new List<Backpack>();
         List<DamageObject> SpellDamage = new List<DamageObject>();
+
+        List<Animation> TextPopUps = new List<Animation>();
 
         private int currentMouse = 0;
 
@@ -32,6 +34,7 @@ namespace Elysian_Fields
 
         private bool RightClicked = false;
         private bool LeftClicked = false;
+        private bool Looked = false;
 
         private int leftClickTime;
 
@@ -72,7 +75,7 @@ namespace Elysian_Fields
         protected override void Initialize()
         {
 
-            map = new Map(new Coordinates(Window.ClientBounds.Width, Window.ClientBounds.Height));
+            map = new Map(new Coordinates(Coordinates.Step * 27, Window.ClientBounds.Height));
             //map.Players.Add(new Player("Aephirus", new Coordinates(0, 0), 150, 100, 1, 1));
             //player1 = new Player("Aephirus", new Coordinates(0, 0));
 
@@ -112,12 +115,16 @@ namespace Elysian_Fields
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\ghost"), spriteList.Count + 1, Entity.CreatureEntity, "ghost"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\legs"), spriteList.Count + 1, Entity.UnknownEntity, ItemSlot.Legs));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\masterlegs"), spriteList.Count + 1, Entity.ItemEntity, "Master Legs"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\ui_bag"), spriteList.Count + 1, Entity.UnknownEntity, ItemSlot.Bag));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\backpack"), spriteList.Count + 1, Entity.ItemEntity, "Backpack"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\backpackbackgrund"), spriteList.Count + 1, Entity.UnknownEntity, "UI_BackpackBackground"));
 
             //map.ItemList.Add(new Item("Sword of magicnezz", new Coordinates(3 * Coordinates.Step, 3 * Coordinates.Step), 1, 1, 60, 1));
             map.ItemList.Add(new Item("Magic Sword", ItemSlot.LeftHand, new Coordinates(3 * Coordinates.Step, 5 * Coordinates.Step), GetSpriteIDByName("Magic Sword"), GetSpriteIDByName("Magic Sword"), 60, 1));
             map.ItemList.Add(new Item("Golden Armor", ItemSlot.Armor, new Coordinates(2 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Golden Armor"), GetSpriteIDByName("Golden Armor"), 0, 15));
             map.ItemList.Add(new Item("Horned Helmet", ItemSlot.Helmet, new Coordinates(3 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Horned Helmet"), GetSpriteIDByName("Horned Helmet"), 0, 12));
             map.ItemList.Add(new Item("Master Legs", ItemSlot.Legs, new Coordinates(3 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Master Legs"), GetSpriteIDByName("Master Legs"), 0, 10));
+            map.ItemList.Add(new Item("Backpack", ItemSlot.Bag, new Coordinates(3 * Coordinates.Step, 2 * Coordinates.Step), GetSpriteIDByName("Backpack"), GetSpriteIDByName("Backpack"), 0, 0));
 
             Spells.Add(new Spell(new bool[]
             {true, true, true,
@@ -132,9 +139,10 @@ namespace Elysian_Fields
             listUI.Add(new UI(GetSpriteByName(ItemSlot.Helmet), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 29, Coordinates.Step * 0), ItemSlot.Helmet));
             listUI.Add(new UI(GetSpriteByName(ItemSlot.Armor), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 30, Coordinates.Step * 0), ItemSlot.Armor));
             listUI.Add(new UI(GetSpriteByName(ItemSlot.Legs), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 31, Coordinates.Step * 0), ItemSlot.Legs));
+            listUI.Add(new UI(GetSpriteByName(ItemSlot.Bag), listUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 1), ItemSlot.Bag));
 
-            spellUI.Add(new UI(GetSpriteByName("UI_FistSpell"), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 1),"Fist", 1));
-            spellUI.Add(new UI(GetSpriteByName("UI_HealSpell"), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 1), "Heal", 2));
+            spellUI.Add(new UI(GetSpriteByName("UI_FistSpell"), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 27, Coordinates.Step * 2),"Fist", 1));
+            spellUI.Add(new UI(GetSpriteByName("UI_HealSpell"), spellUI.Count, Entity.UnknownEntity, new Coordinates(Coordinates.Step * 28, Coordinates.Step * 2), "Heal", 2));
 
             LoadWorld();
 
@@ -143,7 +151,9 @@ namespace Elysian_Fields
                 map.Creatures.Add(new Creature("Ghost", new Coordinates(Coordinates.Step * 2 + i * Coordinates.Step, 0), map.Players[0].ID, 25, 100, i + 1, 10, 150));
             }
 
-            map.WorldItems.Add(CreateWorldItemFromListItem(GetItemFromListByName("Master Legs").ID, new Coordinates(Coordinates.Step * 5, Coordinates.Step * 5)));
+            //map.WorldItems.Add(CreateWorldItemFromListItem(GetItemFromListByName("Master Legs").ID, new Coordinates(Coordinates.Step * 5, Coordinates.Step * 5)));
+
+            //CreateWorldItemFromListItem(GetItemFromListByName("Backpack").ID, new Coordinates(Coordinates.Step * 10, Coordinates.Step * 10));
 
             /*EquipItemFromAnywhere(map.Items[0], GetListUIByItemSlot(ItemSlot.LeftHand));
             EquipItemFromAnywhere(map.Items[1], GetListUIByItemSlot(ItemSlot.RightHand));
@@ -168,6 +178,12 @@ namespace Elysian_Fields
             map.LoadMap("Content\\fields.map");
 
             font = Content.Load<SpriteFont>("EFont");
+
+            /*map.Players[0].EquippedItems.Bag.Container.AddItem(CreateWorldItemFromListItem(GetItemFromListByName("Magic Sword").ID));
+            map.Players[0].EquippedItems.Bag.Container.AddItem(CreateWorldItemFromListItem(GetItemFromListByName("Master Legs").ID));
+            map.Players[0].EquippedItems.Bag.Container.AddItem(CreateWorldItemFromListItem(GetItemFromListByName("Golden Armor").ID));
+            map.Players[0].EquippedItems.Bag.Container.AddItem(CreateWorldItemFromListItem(GetItemFromListByName("Horned Helmet").ID));
+            map.Players[0].EquippedItems.Bag.Container.AddItem(CreateWorldItemFromListItem(GetItemFromListByName("Backpack").ID));*/
 
             Window.Title = "Elysian Fields";
 
@@ -322,6 +338,44 @@ namespace Elysian_Fields
                                 dmgDone.AddRange(map.PlayerCastSpell(map.Players[0], CastSpell, map.GetCreatureByID(map.Players[0].TargetID), gameTime));
                             }
                         }
+                        else
+                        {
+                            UI container = GetListUIByMousePosition(x, y);
+                            if (container.Name == ItemSlot.Bag)
+                            {
+                                Item bag = GetItemByMousePosition(x, y);
+                                if (bag.ID != -1)
+                                {
+                                    if (!bag.Container.Open)
+                                    {
+                                        OpenBag(bag);
+                                    }
+                                    else
+                                    {
+                                        CloseBag(bag);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // TODO: Add potion usage here, use the following code as a base:
+                                Item item = GetItemFromBagCoordinates(x, y);
+                                if(item.ID != -1)
+                                {
+                                    if(item.Container != null)
+                                    {
+                                        if (!item.Container.Open)
+                                        {
+                                            OpenBag(item);
+                                        }
+                                        else
+                                        {
+                                            CloseBag(item);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();
@@ -336,31 +390,55 @@ namespace Elysian_Fields
                 int x = (mx / 32) * 32;
                 int y = (my / 32) * 32;
                 Coordinates target = new Coordinates(x, y);
-                if (!map.OutOfBoundaries(target))
+                if (gameTime.TotalGameTime.TotalMilliseconds - leftClickTime < 200)
                 {
-                    if (gameTime.TotalGameTime.TotalMilliseconds - leftClickTime < 200)
+                    if (!map.OutOfBoundaries(target))
                     {
                         if (map.IsTileWalkable(target))
                         {
                             map.GeneratePathFromCreature(map.Players[0], target);
                         }
                     }
-                    else
+                }
+                else
+                {
+                    if (dragItem.ID != -1)
                     {
-                        if (dragItem.ID != -1)
+                        UI targetEquipment = GetListUIByMousePosition(x, y);
+                        UI sourceEquipment = GetListUIByMousePosition(dragItem.Position.X, dragItem.Position.Y);
+                        Item FromBag = GetItemFromBagCoordinates(dragItem.Position.X, dragItem.Position.Y);
+                        Backpack ToBag = GetBagFromCoordinates(x, y);
+                        if (FromBag.ID == -1)
                         {
-                            UI targetEquipment = GetListUIByMousePosition(x, y);
-                            UI sourceEquipment = GetListUIByMousePosition(dragItem.Position.X, dragItem.Position.Y);
-
                             if (targetEquipment.ID == -1)
                             {
-                                if (sourceEquipment.ID == -1)
+                                if (ToBag.Open)
                                 {
-                                    map.DragItem(dragItem, target);
+                                    if (sourceEquipment.ID == -1)
+                                    {
+                                        ThrowItemToBag(ToBag, target);
+                                    }
+                                    else
+                                    {
+                                        ThrowItemToBag(ToBag, target, sourceEquipment);
+                                    }
                                 }
                                 else
                                 {
-                                    UnequipItem(sourceEquipment, target);
+                                    if (sourceEquipment.ID == -1)
+                                    {
+                                        if (!map.OutOfBoundaries(target))
+                                        {
+                                            map.DragItem(dragItem, target);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!map.OutOfBoundaries(target))
+                                        {
+                                            UnequipItem(sourceEquipment, target);
+                                        }
+                                    }
                                 }
                             }
                             else
@@ -375,6 +453,27 @@ namespace Elysian_Fields
                                 }
                             }
                         }
+                        else
+                        {
+                            if(targetEquipment.ID == -1)
+                            {
+                                if (ToBag.Open)
+                                {
+                                    ThrowItemToBag(ToBag, target);
+                                }
+                                else
+                                {
+                                    if (!map.OutOfBoundaries(target))
+                                    {
+                                        ThrowItemFromBag(target);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                EquipItemFromBag(targetEquipment);
+                            }
+                        }
                     }
                 }
                 // For debug purposes: Window.Title = map.Players[0].TargetID.ToString();*/
@@ -385,7 +484,7 @@ namespace Elysian_Fields
 
             if (this.IsActive)
             {
-                if (Mouse.GetState().LeftButton == ButtonState.Pressed)
+                if (Mouse.GetState().LeftButton == ButtonState.Pressed && (!Keyboard.GetState().IsKeyDown(Keys.LeftControl) && !Keyboard.GetState().IsKeyDown(Keys.RightControl)))
                 {
                     if (!LeftClicked)
                     {
@@ -393,7 +492,7 @@ namespace Elysian_Fields
                         int x = (mx / 32) * 32;
                         int y = (my / 32) * 32;
                         leftClickTime = (int) gameTime.TotalGameTime.TotalMilliseconds;
-                        dragItem = GetItemByMousePosition(x, y);
+                        dragItem = GetItemByMousePosition(mx, my);
                         LeftClicked = true;
                     }
                     else
@@ -404,6 +503,24 @@ namespace Elysian_Fields
                         }
                     }
                 }
+                else if (Mouse.GetState().LeftButton == ButtonState.Pressed && (Keyboard.GetState().IsKeyDown(Keys.LeftControl) || Keyboard.GetState().IsKeyDown(Keys.RightControl)) && !LeftClicked && !Looked)
+                {
+                    int mx = Mouse.GetState().X, my = Mouse.GetState().Y;
+                    int x = (mx / 32) * 32;
+                    int y = (my / 32) * 32;
+                    Item lookItem = GetItemByMousePosition(mx, my);
+                    if (lookItem.ID != -1)
+                    {
+                        TextPopUps.Add(new Animation(1000, 0, 1, (int)gameTime.TotalGameTime.TotalMilliseconds, "You see " + lookItem.Name + " (ID: " + lookItem.ID + ")."));
+                    }
+                    Looked = true;
+                }
+            }
+
+
+            if(Mouse.GetState().LeftButton == ButtonState.Released && Looked)
+            {
+                Looked = false;
             }
 
             if (gameTime.TotalGameTime.Milliseconds % 250 == 0)
@@ -413,7 +530,7 @@ namespace Elysian_Fields
 
             if (gameTime.TotalGameTime.Milliseconds % 1000 == 0)
             {
-                map.GeneratePaths();// <- Uncomment this to make monsters move
+                //map.GeneratePaths();// <- Uncomment this to make monsters move
             }
 
             if (gameTime.TotalGameTime.Seconds % 2 == 0 && !regenerated)
@@ -465,6 +582,18 @@ namespace Elysian_Fields
             }
         }
 
+        private void OpenBag(Item bag)
+        {
+            bag.Container.Open = true;
+            OpenBackpacks.Add(bag.Container);
+        }
+
+        private void CloseBag(Item bag)
+        {
+            bag.Container.Open = false;
+            OpenBackpacks.Remove(bag.Container);
+        }
+
         private void EquipItem(UI targetEquipment, UI SourceEquipment = null)
         {
             if (SourceEquipment == null)
@@ -473,7 +602,41 @@ namespace Elysian_Fields
             }
             else
             {
-                map.EquipItem(dragItem, targetEquipment, SourceEquipment);
+                map.EquipItem(dragItem, targetEquipment, SourceEquipment, false);
+            }
+        }
+
+        private void EquipItemFromBag(UI targetEquipment)
+        {
+            map.EquipItemFromBag(dragItem, targetEquipment);
+        }
+
+        private void ThrowItemFromBag(Coordinates Destination)
+        {
+            map.ThrowItemFromBag(dragItem, Destination);
+        }
+
+        private void ThrowItemToBag(Backpack Bag, Coordinates Destination, UI SourceEquipment = null)
+        {
+            // TODO: Don't allow main bag to be thrown into any of its nested bags
+            if (dragItem.Container == null || dragItem.Container.ID != Bag.ID)
+            {
+                if (SourceEquipment == null)
+                {
+                    if (dragItem.Parent.IsEmpty())
+                    {
+                        map.ThrowItemToBag(dragItem, Bag, Destination);
+                    }
+                    else
+                    {
+                        map.ThrowItemToBag(dragItem, Bag, Destination, null, dragItem.Parent);
+                    }
+                }
+                else
+                {
+                    SourceEquipment.Sprite = GetSpriteByName(SourceEquipment.Name);
+                    map.ThrowItemToBag(dragItem, Bag, Destination, SourceEquipment);
+                }
             }
         }
 
@@ -561,7 +724,7 @@ namespace Elysian_Fields
 
             Vector2 cursorPos = Mouse.GetState().Position.ToVector2();
            
-            GraphicsDevice.Clear(Color.ForestGreen);
+            GraphicsDevice.Clear(Color.DarkSlateGray);
 
 
 
@@ -580,7 +743,7 @@ namespace Elysian_Fields
             for(int i = 0; i < map.WorldItems.Count; i++)
             {
                 //if(GetListUIByMousePosition(map.MapItems[i].Position.X, map.MapItems[i].Position.Y).ID == -1)
-                if(map.WorldItems[i].Slot == null)
+                if(map.WorldItems[i].Slot == null && map.WorldItems[i].Parent.IsEmpty())
                 spriteBatch.Draw(GetSpriteByID(map.WorldItems[i].SpriteID), new Vector2((float)map.WorldItems[i].Position.X, (float)map.WorldItems[i].Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
             }
 
@@ -601,6 +764,9 @@ namespace Elysian_Fields
             // Draw damage dealt
             DrawDamageDone(gameTime);
 
+            // Draw look-objects
+            DrawTextPopUps(gameTime);
+
             int startStep = (spellUI[spellUI.Count - 1].Position.Y / 32) + 1;
             spriteBatch.DrawString(font, "Health: " + map.Players[0].Health + " / " + map.Players[0].MaxHealth, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
             spriteBatch.DrawString(font, "Mana: " + map.Players[0].Mana + " / " + map.Players[0].MaxMana, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
@@ -609,6 +775,8 @@ namespace Elysian_Fields
             spriteBatch.DrawString(font, "Magic Strength: " + map.Players[0].MagicStrength, new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
             spriteBatch.DrawString(font, "Strength: " + map.Players[0].TotalStrength(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
             spriteBatch.DrawString(font, "Defense: " + map.Players[0].TotalDefense(), new Vector2((float)Coordinates.Step * 27, (float)Coordinates.Step * startStep++), Color.Black);
+
+            DrawBags(startStep);
 
             spriteBatch.Draw(MouseCursors[currentMouse].Sprite, cursorPos, Color.White);
 
@@ -652,6 +820,64 @@ namespace Elysian_Fields
             {
                 spriteBatch.Draw(GetSpriteByName("UI_background"), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
                 spriteBatch.Draw(GetSpriteByID(map.Players[0].EquippedItems.Legs.SpriteID), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
+
+            UI_Pos = GetListUIByItemSlot(ItemSlot.Bag);
+            if (map.Players[0].EquippedItems.Bag.ID != -1)
+            {
+                spriteBatch.Draw(GetSpriteByName("UI_background"), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(GetSpriteByID(map.Players[0].EquippedItems.Bag.SpriteID), new Vector2((float)UI_Pos.Position.X, (float)UI_Pos.Position.Y), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            }
+        }
+        private void DrawBags(int OffsetY)
+        {
+            int y = 0;
+            for (int i = 0; i < map.WorldItems.Count; i++)
+            {
+                if (map.WorldItems[i].Container != null && map.WorldItems[i].Container.Open)
+                {
+                    // TODO: Change when writing multiplayer code
+                    spriteBatch.DrawString(font, map.WorldItems[i].Name + ":", new Vector2((float)Coordinates.Step * 27, (float)(((Coordinates.Step * OffsetY) - 16) + (y * 232))), Color.Black);
+                    spriteBatch.Draw(GetSpriteByName("UI_BackpackBackground"), new Vector2((float)Coordinates.Step * 27, (float)((Coordinates.Step * OffsetY) + (y * 232))), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                    map.WorldItems[i].Container.Position = new Coordinates(Coordinates.Step * 27, ((Coordinates.Step * OffsetY) + (y * 200)));
+                    List<Item> containerItems = map.WorldItems[i].Container.GetItems();
+                    int j = 0;
+                    int addedY = 0;
+                    for (int c = 0; c < containerItems.Count; c++)
+                    {
+                        if (j % 4 == 0)
+                        {
+                            j = 0;
+                            if(c > 0)
+                            addedY++;
+                        }
+                        containerItems[c].Position = new Coordinates(((Coordinates.Step * (27 + j)) + 4 + (8 * j)), ((Coordinates.Step * (OffsetY + addedY)) + 4 + (8 * addedY) + (y * 232)));
+                        spriteBatch.Draw(GetSpriteByID(containerItems[c].SpriteID), new Vector2((float)((Coordinates.Step * (27 + j)) + 4 + (8 * j)), (float)((Coordinates.Step * (OffsetY + addedY)) + 4 + (8 * addedY) + (y * 232))), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                        j++;
+                    }
+
+                    y += 1;
+                }
+            }
+        }
+
+        private void DrawTextPopUps(GameTime gameTime)
+        {
+            int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+            if (TextPopUps.Count > 0)
+            {
+                for (int f = 0; f < TextPopUps.Count; f++)
+                {
+                    DrawOutlinedString(font, TextPopUps[f].Text, new Vector2((float)Coordinates.Step * 10, (float)Coordinates.Step * 9 + (f * 16)), Color.LimeGreen);
+                }
+
+                for (int j = 0; j < TextPopUps.Count; j++)
+                {
+                    if (currentTime > TextPopUps[j].EndTime)
+                    {
+                        TextPopUps.RemoveAt(j);
+                    }
+                }
             }
         }
 
@@ -766,6 +992,65 @@ namespace Elysian_Fields
             spriteBatch.DrawString(font, Text, position, color);
         }
 
+        private Item GetItemFromBagCoordinates(int x, int y)
+        {
+            Rectangle tmpRect;
+            tmpRect.Height = 32;
+            tmpRect.Width = 32;
+            for(int i = 0; i < OpenBackpacks.Count; i++)
+            {
+                List<Item> CurrentBackpack = OpenBackpacks[i].GetItems();
+                for(int c = 0; c < CurrentBackpack.Count; c++)
+                {
+                    tmpRect.X = CurrentBackpack[c].Position.X;
+                    tmpRect.Y = CurrentBackpack[c].Position.Y;
+                    if(tmpRect.Contains(x, y))
+                    {
+                        return CurrentBackpack[c];
+                    }
+                }
+            }
+            return new Item();
+        }
+
+        private Backpack GetBagFromCoordinates(int x, int y)
+        {
+            Rectangle tmpRect;
+            tmpRect.Width = 160;
+            tmpRect.Height = 200;
+            for (int i = 0; i < map.WorldItems.Count; i++)
+            {
+                if (map.WorldItems[i].Container != null && map.WorldItems[i].Container.Open)
+                {
+                    tmpRect.X = map.WorldItems[i].Container.Position.X;
+                    tmpRect.Y = map.WorldItems[i].Container.Position.Y;
+                    if (tmpRect.Contains(x, y))
+                    {
+                        return map.WorldItems[i].Container;
+                    }
+                }
+            }
+            return new Backpack();
+        }
+
+        private Backpack GetBagFromID(int id)
+        {
+            for (int i = 0; i < map.WorldItems.Count; i++)
+            {
+                if (map.WorldItems[i].ID == id)
+                {
+                    return map.WorldItems[i].Container;
+                }
+            }
+            return new Backpack();
+        }
+
+        /* TODO: Write this function
+        private Item GetItemFromBagSlot(int Slot, Item Bag)
+        {
+            return new Item();
+        }*/
+
         public Texture2D GetSpriteByID(int ID)
         {
             for(int i = 0; i < spriteList.Count; i++)
@@ -824,6 +1109,12 @@ namespace Elysian_Fields
 
         private Item GetItemByMousePosition(int x, int y)
         {
+            Item tmpitem = GetItemFromBagCoordinates(x, y);
+            if (tmpitem.ID != -1)
+            {
+                return GetItemFromBagCoordinates(x, y);
+            }
+
             Rectangle tmpRect;
             tmpRect.Height = 32;
             tmpRect.Width = 32;
@@ -922,12 +1213,14 @@ namespace Elysian_Fields
         private Item CreateWorldItemFromListItem(int ID, Coordinates pos = null)
         {
             Item newItem;
+            if(pos == null) { pos = new Coordinates(0, 0); }
             for (int i = 0; i < map.ItemList.Count; i++)
             {
                 if (map.ItemList[i].ID == ID)
                 {
-                    newItem = new Item(map.ItemList[i].Name, map.ItemList[i].WearSlot, pos, map.ItemList[i].SpriteID, map.ItemList[i].ID, map.ItemList[i].Strength, map.ItemList[i].Defense, map.ItemList[i].Visible);
-                    return newItem;
+                    newItem = new Item(map.ItemList[i].Name, map.ItemList[i].WearSlot, pos, map.ItemList[i].SpriteID, map.WorldItems.Count + 1, map.ItemList[i].Strength, map.ItemList[i].Defense, map.ItemList[i].Visible);
+                    map.WorldItems.Add(newItem);
+                    return map.WorldItems[map.WorldItems.Count - 1];
                 }
             }
 
@@ -979,44 +1272,129 @@ namespace Elysian_Fields
 
                 if (int.Parse(EquippedItems[0]) > 0)
                 {
-                    map.WorldItems.Add(CreateWorldItemFromListItem(int.Parse(EquippedItems[0])));
-                    map.WorldItems[map.WorldItems.Count - 1].Slot = ItemSlot.LeftHand;
-                    map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.LeftHand).Position;
-                    map.Players[currentID].EquippedItems.LeftHand = map.WorldItems[map.WorldItems.Count - 1];
+                    Item newItem = CreateWorldItemFromListItem(int.Parse(EquippedItems[0]));
+                    newItem.Slot = ItemSlot.LeftHand;
+                    newItem.Position = GetListUIByItemSlot(ItemSlot.LeftHand).Position;
+                    map.Players[currentID].EquippedItems.LeftHand = newItem;
                     GetListUIByItemSlot(ItemSlot.LeftHand).Sprite = GetSpriteByName("UI_background");
                 }
                 if (int.Parse(EquippedItems[1]) > 0)
                 {
-                    map.WorldItems.Add(CreateWorldItemFromListItem(int.Parse(EquippedItems[1])));
-                    map.WorldItems[map.WorldItems.Count - 1].Slot = ItemSlot.RightHand;
-                    map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.RightHand).Position;
-                    map.Players[currentID].EquippedItems.RightHand = map.WorldItems[map.WorldItems.Count - 1];
+                    Item newItem = CreateWorldItemFromListItem(int.Parse(EquippedItems[1]));
+                    newItem.Slot = ItemSlot.RightHand;
+                    newItem.Position = GetListUIByItemSlot(ItemSlot.RightHand).Position;
+                    map.Players[currentID].EquippedItems.RightHand = newItem;
                     GetListUIByItemSlot(ItemSlot.RightHand).Sprite = GetSpriteByName("UI_background");
                 }
                 if (int.Parse(EquippedItems[2]) > 0)
                 {
-                    map.WorldItems.Add(CreateWorldItemFromListItem(int.Parse(EquippedItems[2])));
-                    map.WorldItems[map.WorldItems.Count - 1].Slot = ItemSlot.Helmet;
-                    map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.Helmet).Position;
-                    map.Players[currentID].EquippedItems.Helmet = map.WorldItems[map.WorldItems.Count - 1];
+                    Item newItem = CreateWorldItemFromListItem(int.Parse(EquippedItems[2]));
+                    newItem.Slot = ItemSlot.Helmet;
+                    newItem.Position = GetListUIByItemSlot(ItemSlot.Helmet).Position;
+                    map.Players[currentID].EquippedItems.Helmet = newItem;
                     GetListUIByItemSlot(ItemSlot.Helmet).Sprite = GetSpriteByName("UI_background");
                 }
                 if (int.Parse(EquippedItems[3]) > 0)
                 {
-                    map.WorldItems.Add(CreateWorldItemFromListItem(int.Parse(EquippedItems[3])));
-                    map.WorldItems[map.WorldItems.Count - 1].Slot = ItemSlot.Armor;
-                    map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.Armor).Position;
-                    map.Players[currentID].EquippedItems.Armor = map.WorldItems[map.WorldItems.Count - 1];
+                    Item newItem = CreateWorldItemFromListItem(int.Parse(EquippedItems[3]));
+                    newItem.Slot = ItemSlot.Armor;
+                    newItem.Position = GetListUIByItemSlot(ItemSlot.Armor).Position;
+                    map.Players[currentID].EquippedItems.Armor = newItem;
                     GetListUIByItemSlot(ItemSlot.Armor).Sprite = GetSpriteByName("UI_background");
                 }
                 if (int.Parse(EquippedItems[4]) > 0)
                 {
-                    map.WorldItems.Add(CreateWorldItemFromListItem(int.Parse(EquippedItems[4])));
-                    map.WorldItems[map.WorldItems.Count - 1].Slot = ItemSlot.Legs;
-                    map.WorldItems[map.WorldItems.Count - 1].Position = GetListUIByItemSlot(ItemSlot.Legs).Position;
-                    map.Players[currentID].EquippedItems.Legs = map.WorldItems[map.WorldItems.Count - 1];
+                    Item newItem = CreateWorldItemFromListItem(int.Parse(EquippedItems[4]));
+                    newItem.Slot = ItemSlot.Legs;
+                    newItem.Position = GetListUIByItemSlot(ItemSlot.Legs).Position;
+                    map.Players[currentID].EquippedItems.Legs = newItem;
                     GetListUIByItemSlot(ItemSlot.Legs).Sprite = GetSpriteByName("UI_background");
                 }
+
+                // TODO: Finish the code below and add more error checks
+                string BagsContainingItems = EquippedItems[5].Substring("Bags:".Length, EquippedItems[5].IndexOf(".") - "Bags:".Length);
+                string ContainedItems = EquippedItems[5].Substring(EquippedItems[5].IndexOf("Items:") + "Items:".Length);
+                string[] Parameters;
+                if(BagsContainingItems.IndexOf("+") > 0)
+                {
+
+                    // Create bags before adding items to them
+
+                    string[] Bags = BagsContainingItems.Split("+".ToCharArray());
+                    for (int i = 0; i < Bags.Length; i++)
+                    {
+                        Parameters = Bags[i].Split(";".ToCharArray());
+                        if (Parameters[2] == "-1")
+                        {
+                            Item newItem = CreateWorldItemFromListItem(int.Parse(Parameters[0]));
+                            newItem.ID = int.Parse(Parameters[1]);
+                            newItem.Slot = ItemSlot.Bag;
+                            newItem.Position = GetListUIByItemSlot(ItemSlot.Bag).Position;
+                            map.Players[currentID].EquippedItems.Bag = newItem;
+                            GetListUIByItemSlot(ItemSlot.Bag).Sprite = GetSpriteByName("UI_background");
+                        }
+                        else
+                        {
+                            Item newItem = CreateWorldItemFromListItem(int.Parse(Parameters[0]));
+                            newItem.ID = int.Parse(Parameters[1]);
+                            newItem.Slot = null;
+                            GetBagFromID(int.Parse(Parameters[2])).AddItem(newItem);
+                        }
+                    }
+
+                    // Add items to bags
+
+                    if (ContainedItems.IndexOf("+") > 0)
+                    {
+                        string[] ItemsInBags = ContainedItems.Split("+".ToCharArray());
+                        for (int c = 0; c < ItemsInBags.Length; c++)
+                        {
+                            Parameters = ItemsInBags[c].Split(";".ToCharArray());
+                            Item newBagItem = CreateWorldItemFromListItem(int.Parse(Parameters[0]));
+                            newBagItem.Slot = null;
+                            GetBagFromID(int.Parse(Parameters[1])).AddItem(newBagItem);
+                        }
+                    }
+                    else
+                    {
+                        Parameters = ContainedItems.Split(";".ToCharArray());
+                        Item newBagItem = CreateWorldItemFromListItem(int.Parse(Parameters[0]));
+                        newBagItem.Slot = null;
+                        GetBagFromID(int.Parse(Parameters[1])).AddItem(newBagItem);
+                    }
+
+                }
+                else
+                {
+                    Parameters = BagsContainingItems.Split(";".ToCharArray());
+                    Item newItem = CreateWorldItemFromListItem(int.Parse(Parameters[0]));
+                    newItem.Slot = ItemSlot.Bag;
+                    newItem.Position = GetListUIByItemSlot(ItemSlot.Bag).Position;
+                    map.Players[currentID].EquippedItems.Bag = newItem;
+                    GetListUIByItemSlot(ItemSlot.Bag).Sprite = GetSpriteByName("UI_background");
+
+                    if(ContainedItems.IndexOf("+") > 0)
+                    {
+                        string[] ItemsInBags = ContainedItems.Split("+".ToCharArray());
+                        for(int c = 0; c < ItemsInBags.Length; c++)
+                        {
+                            Parameters = ItemsInBags[c].Split(";".ToCharArray());
+                            Item newBagItem = CreateWorldItemFromListItem(int.Parse(Parameters[0]));
+                            newBagItem.Slot = null;
+                            //newBagItem.Position = GetListUIByItemSlot(ItemSlot.Bag).Position;
+                            map.Players[currentID].EquippedItems.Bag.Container.AddItem(newBagItem);
+                        }
+                    }
+                    else
+                    {
+                        Parameters = ContainedItems.Split(";".ToCharArray());
+                        Item newBagItem = CreateWorldItemFromListItem(int.Parse(Parameters[0]));
+                        newBagItem.Slot = null;
+                        GetBagFromID(int.Parse(Parameters[1])).AddItem(newBagItem);
+                    }
+                }
+                //TextPopUps.Add(new Animation(10000, 0, 1, 0, ContainedItems));
+
                 map.Players[currentID].ManaSpent = int.Parse(currentPlayer[8]);
                 map.Players[currentID].MagicStrength = int.Parse(currentPlayer[7]);
                 //saveString = Players[i].ID + "|" + Players[i].Name + "|" + Players[i].EquippedItems.ToString() + "|" + Players[i].Level + "|" + Players[i].Experience + "|" + Players[i].MaxHealth + "|" + Players[i].MaxMana + "|" + Players[i].MagicStrength + "|" + Players[i].ManaSpent + "|" + Players[i].Position.X + "|" + Players[i].Position.Y + "|" + Players[i].SpriteID;
