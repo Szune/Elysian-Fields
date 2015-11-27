@@ -70,11 +70,22 @@ namespace Elysian_Fields.Modules.AI
                     }
                     else if (Greeted && word != lua.greeting)
                     {
-                        string msg = lua.Chat(word, player.ID);
-                        if (msg.Length > 0)
+
+                        /*try
+                        {*/
+                        if (lua.words != null)
                         {
-                            return msg;
+                            string msg = lua.Chat(word, player.ID);
+                            if (msg.Length > 0)
+                            {
+                                return msg;
+                            }
                         }
+                        //}
+                        /*catch(Exception ex)
+                        {
+                            return ex.Message;
+                        }*/
                         return "";
 
                     }

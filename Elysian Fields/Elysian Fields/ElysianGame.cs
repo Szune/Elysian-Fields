@@ -125,7 +125,7 @@ namespace Elysian_Fields
             //EventInput.KeyDown += new KeyEventHandler(EventInput_KeyDown);
 
             // Uncomment the following lines to change the fps to 100
-            /*this.TargetElapsedTime = System.TimeSpan.FromSeconds(1.0f / 100.0f);
+            /*this.TargetElapsedTime = System.TimeSpan.FromSeconds(1.0f / 50.0f);
             graphics.SynchronizeWithVerticalRetrace = false;*/
         }
 
@@ -841,9 +841,9 @@ namespace Elysian_Fields
                         map.DebugTiles_Pathfinding.Clear();
                         return;
                     }*/
+                    ChatPopUps.Add(new Animation(3000, 0, 0, (int)gameTime.TotalGameTime.TotalMilliseconds, GetTextboxByName("Chat").Text, 0, new Coordinates(map.Players[0].Position.X, map.Players[0].Position.Y)));
                     for (int i = 0; i < map.NPCs.Count; i++)
                     {
-                        ChatPopUps.Add(new Animation(3000, 0, 0, (int)gameTime.TotalGameTime.TotalMilliseconds, GetTextboxByName("Chat").Text, 0, new Coordinates(map.Players[0].Position.X, map.Players[0].Position.Y)));
                         string npcChat = map.NPCs[i].Chat(GetTextboxByName("Chat").Text.ToLower(), map.Players[0]);
                         if (npcChat.Length > 0)
                         {
