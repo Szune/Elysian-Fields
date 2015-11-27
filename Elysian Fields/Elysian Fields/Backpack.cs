@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using Elysian_Fields.Modules.Controls;
 
 namespace Elysian_Fields
 {
@@ -12,12 +13,50 @@ namespace Elysian_Fields
         public Coordinates Position;
         public string Name = "";
         public bool Open = false;
-        public int ID;
+        public int ID = -1;
         public int ItemID;
+        public Coordinates ClosePosition;
+        public Scrollbar Scroll = new Scrollbar();
+        public int Height = 80;
+        public int MaxHeight = 200;
+
+        public bool AddItem(Item item)
+        {
+            if (ContainedItems.Count < 20)
+            {
+                item.Parent = this;
+                item.ParentID = this.ID;
+                item.ParentItemID = this.ItemID;
+                item.Slot = ItemSlot.InsideBag;
+                ContainedItems.Add(item);
+
+                for(int i = 0; i < ContainedItems.Count; i++)
+                {
+                    ContainedItems[i].BagSlot = i;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public void RemoveItem(Item item)
+        {
+            item.BagSlot = -1;
+            item.Parent = new Backpack();
+            item.ParentID = -1;
+            item.ParentItemID = -1;
+            ContainedItems.Remove(item);
+        }
+
 
         public List<Item> GetItems()
         {
             return ContainedItems;
+        }
+
+        public void Sort()
+        {
+            ContainedItems.Sort((a, b) => a.BagSlot.CompareTo(b.BagSlot));
         }
 
         public List<Item> GetItemsSafe()
@@ -48,7 +87,6 @@ namespace Elysian_Fields
         {
             List<Item> AllItems = new List<Item>();
             bool loopDone = false;
-            // TODO: Send all items in bag and in their bags and in their bags as well (Bag.Container.GetItemsSafe() until all bags are accounted for)
             if (this.ContainedItems.Count > 0)
             {
                 List<Item> bagItems = new List<Item>();
@@ -93,27 +131,6 @@ namespace Elysian_Fields
             List<Item> newList = new List<Item>();
             newList.AddRange(AllItems);
             return newList;
-        }
-
-        public bool AddItem(Item item)
-        {
-            if (ContainedItems.Count < 20)
-            {
-                item.Parent = this;
-                item.ParentID = this.ID;
-                item.ParentItemID = this.ItemID;
-                ContainedItems.Add(item);
-                return true;
-            }
-            return false;
-        }
-
-        public void RemoveItem(Item item)
-        {
-            item.Parent = new Backpack();
-            item.ParentID = -1;
-            item.ParentItemID = -1;
-            ContainedItems.Remove(item);
         }
     }
 }

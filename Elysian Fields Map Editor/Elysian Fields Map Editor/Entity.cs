@@ -23,8 +23,10 @@ namespace Elysian_Fields_Map_Editor
         public const int TileEntity = 3;
         public const int ItemEntity = 4;
         public const int UnknownEntity = 5;
+        public const int TenByTenButton = 6;
+        public const int ThirtyTwoByThirtyTwoButton = 7;
 
-        
+
 
 
 

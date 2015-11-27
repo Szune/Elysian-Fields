@@ -136,7 +136,6 @@ namespace Elysian_Fields
             bool first = true;
             string items = "Items:";
             string bags = "Bags:";
-            // TODO: Send all items in bag and in their bags and in their bags as well (Bag.Container.GetItemsSafe() until all bags are accounted for)
             if (Bag.Container != null)
             {
                 List<Item> AllItems = new List<Item>();

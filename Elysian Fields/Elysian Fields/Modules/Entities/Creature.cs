@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Elysian_Fields.Modules.AI;
 
 namespace Elysian_Fields
 {
@@ -9,12 +10,14 @@ namespace Elysian_Fields
     {
         public Coordinates SpawnPosition { get; set; }
 
-        public List<Coordinates> Path = new List<Coordinates>();
+        public List<Node> Path = new List<Node>();
 
         public int SuperPowerSteps { get; set; }
         public Coordinates Destination { get; set; }
 
         public int TargetID { get; set; }
+
+        public List<Loot> LootList = new List<Loot>();
 
         public int Level { get; set; }
 
@@ -39,7 +42,7 @@ namespace Elysian_Fields
         }
         public Creature(string name, int id = -1) { Name = name; MaxHealth = 1; Health = 1; ID = id; }
 
-        public Creature(string name, Coordinates coordinates, int targetID, int strength = 1, int health = 1, int id = 0, int defense = 0, int experience = 1)
+        public Creature(string name, Coordinates coordinates, int targetID, int strength = 1, int health = 1, int id = 0, int defense = 0, int experience = 1, List<Loot> loot = null, int spriteid = 0)
         {
             /* Spöken */
             Name = name;
@@ -56,6 +59,11 @@ namespace Elysian_Fields
             TimeOfLastAttack = 0;
             Defense = defense;
             Experience = experience;
+            if(loot != null)
+            {
+                LootList.AddRange(loot);
+            }
+            SpriteID = spriteid;
         }
 
         public void Spawn()
@@ -152,7 +160,7 @@ namespace Elysian_Fields
             Coordinates Step = null;
             if (Path.Count > 0)
             {
-                Step = Path[Path.Count - 1];
+                Step = Coordinates.Parse(Path[Path.Count - 1]);
                 Path.RemoveAt(Path.Count - 1);
             }
             return Step;

@@ -8,6 +8,16 @@ namespace Elysian_Fields
 {
     class Utility
     {
+        public static int MinZ = -7;
+        public static int MaxZ = 7;
+        public static int GroundZ = 0;
+
+        public static int MaxX = 1024;
+        public static int MaxY = 1024;
+
+        public static int MaxZ_Order = 15;
+
+        public static Coordinates CenterCoordinates = new Coordinates(Coordinates.Step * 12, Coordinates.Step * 8); // X: 12 Y: 8
 
         public static int ExperienceNeededForLevel(double level)
         {

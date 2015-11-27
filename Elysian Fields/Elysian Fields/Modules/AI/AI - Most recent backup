@@ -1,0 +1,228 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Configuration;
+
+namespace Elysian_Fields.Modules.AI
+{
+    class AI
+    {
+        private Map map { get; set; }
+
+        private int G = int.Parse(ConfigurationManager.AppSettings["G"]);
+
+        private List<Node> OpenList = new List<Node>(); // Den öppna listan med rutor som vi fortfarande kollar
+        private List<Node> ClosedList = new List<Node>(); // Den stängda listan med rutor som vi inte behöver kolla längre
+        private Node sourcePos = new Node();
+        private Node Destination = new Node();
+        private int maxDistance = 20;
+
+        public AI() { }
+
+        public AI(Map mapEngine)
+        {
+            map = mapEngine;
+        }
+
+        public List<Node> PathTo(Coordinates Target, Coordinates FromCreature, int _maxDistance = 20)
+        { 
+            //List<Node> OpenList = new List<Node>(); // Den öppna listan med rutor som vi fortfarande kollar
+            //List<Node> ClosedList = new List<Node>(); // Den stängda listan med rutor som vi inte behöver kolla längre
+            Node Parent = new Node(FromCreature.X, FromCreature.Y, FromCreature.Z); // Parent-rutan
+            Destination = new Node(Target.X, Target.Y, Target.Z); // Destinationen
+            int tries = 0;
+            bool havePath = false;
+            sourcePos = new Node(FromCreature.X, FromCreature.Y,  FromCreature.Z);
+            maxDistance = _maxDistance;
+
+            OpenList.Add(Parent); // Lägg till startpunkten
+            //OpenList.AddRange(CheckAdjacentSquares(Parent, Parent, Destination, ClosedList, OpenList)); // Lägg till de rutor runtom som går att gå på i den öppna listan
+            CheckAdjacentSquares(Parent);
+            OpenList.Remove(Parent); // Ta bort startpunkten
+            ClosedList.Add(Parent); // Lägg till startpunkten i listan med rutor vi inte behöver kolla
+
+
+            while (!havePath)
+            {
+                if (OpenList.Count == 0 && havePath == false) { break; }
+                if (tries == 200) { break; }
+                Parent = LowestFScore();
+                OpenList.Remove(Parent);
+                ClosedList.Add(Parent);
+                CheckAdjacentSquares(Parent);
+
+                if (IsTileInList(Destination, ClosedList)) { havePath = true; }
+                tries += 1;
+            }
+
+            List<Node> path = new List<Node>();
+            
+
+            if (havePath)
+            {
+                Destination = GetTileInList(Destination, ClosedList);
+                path.Add(Destination);
+                while (Destination.hasParent())
+                {
+                    Destination = Destination.Parent;
+                    path.Add(Destination);
+                }
+            }
+
+            return path;
+        }
+
+        public int DistanceToDiagonal(Node Source, Node Destination)
+        {
+            return (int)Math.Sqrt(Math.Pow((Source.X - Destination.X), 2) + Math.Pow(Source.Y - Destination.Y, 2));
+        }
+
+        public void CheckAdjacentSquares(Node Square)
+        {
+
+            Node CheckingSquare = new Node(Square.X + 1, Square.Y, Square.Z); // East
+            CheckSquare(Square, CheckingSquare);
+
+            CheckingSquare = new Node(Square.X - 1, Square.Y, Square.Z); // West
+            CheckSquare(Square, CheckingSquare);
+
+            CheckingSquare = new Node(Square.X, Square.Y - 1, Square.Z); // North
+            CheckSquare(Square, CheckingSquare);
+
+            CheckingSquare = new Node(Square.X, Square.Y + 1, Square.Z); // South
+            CheckSquare(Square, CheckingSquare);
+
+        }
+
+        public void CheckSquare(Node Square, Node CheckingSquare)
+        {
+            Node Parent = Square;
+            Node tmpSquare;
+            if (DistanceToDiagonal(sourcePos, CheckingSquare) < maxDistance)
+            {
+                if (IsTileWalkable(CheckingSquare) || SamePosition(CheckingSquare, Destination))
+                {
+                    tmpSquare = (new Node(CheckingSquare.X, CheckingSquare.Y, CheckingSquare.Z, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
+
+                    if (ConfigurationManager.AppSettings["DebugMode"] == "true")
+                        map.DebugTiles_Pathfinding.Add(new Tile("grass", 1, Coordinates.Parse(CheckingSquare), Coordinates.Parse(CheckingSquare), 0, true));
+
+                    InsertSquareInList(tmpSquare);
+                }
+            }
+
+        }
+
+        public bool IsTileWalkable(Node Tile)
+        {
+            return (map.IsTileWalkable(Coordinates.Parse(Tile)) && !IsTileInList(Tile, ClosedList) && !IsTileInList(Tile, OpenList));
+        }
+
+        public void InsertSquareInList(Node Square)
+        {
+            // Binary search to find right place to insert square -
+            // so that the list is always sorted
+            if (OpenList.Count > 0)
+            {
+                if(Square.F < OpenList[0].F || Square.F == OpenList[0].F)
+                {
+                    OpenList.Insert(0, Square);
+                    return;
+                }
+                if(Square.F > OpenList[OpenList.Count-1].F || Square.F == OpenList[OpenList.Count-1].F)
+                {
+                    OpenList.Add(Square);
+                    return;
+                }
+                bool inserted = false;
+                int start = OpenList.Count - 1;
+                int last = start;
+                if (OpenList.Count > 1)
+                {
+                    while (!inserted)
+                    {
+                        if (Square.F > OpenList[start - 1].F && Square.F < OpenList[start].F)
+                        {
+                            last = start;
+                            inserted = true;
+                            break;
+                        }
+                        else if (Square.F == OpenList[start - 1].F)
+                        {
+                            last = start;
+                            inserted = true;
+                            break;
+                        }
+                        else if (Square.F == OpenList[start].F)
+                        {
+                            last = start;
+                            inserted = true;
+                            break;
+                        }
+
+                        if (Square.F < OpenList[start].F)
+                        {
+                            last = start;
+                            start = start / 2;
+                            //inserted = true;
+                        }
+                        else if (Square.F > OpenList[start].F)
+                        {
+                            last = start;
+                            start = start + (start / 2);
+                            //inserted = true;
+                        }
+                        else
+                        {
+                            inserted = true;
+                            break;
+                        }
+                    }
+                    OpenList.Insert(last, Square);
+                }
+            }
+        }
+
+
+        public int CalculateHeuristic(Node Source, Node Destination)
+        {
+            return (G + (G * (Math.Abs(Source.X - Destination.X) + Math.Abs(Source.Y - Destination.Y)))); // Manhattan-metoden
+        }
+
+        public bool IsTileInList(Node Tile, List<Node> List)
+        {
+            bool isClosed = false;
+            for (int i = 0; i < List.Count; i++)
+            {
+                if (List[i].X == Tile.X && List[i].Y == Tile.Y) { isClosed = true; }
+            }
+
+            return isClosed;
+        }
+
+        public Node GetTileInList(Node Tile, List<Node> List)
+        {
+            Node TileNode = new Node();
+            for (int i = 0; i < List.Count; i++)
+            {
+                if (List[i].X == Tile.X && List[i].Y == Tile.Y) { TileNode = List[i]; break; }
+            }
+
+            return TileNode;
+        }
+
+
+        public Node LowestFScore()
+        {
+            Node lowestF = new Node();
+            lowestF = OpenList[0];
+            return lowestF;
+        }
+
+        public bool SamePosition(Node Source, Node Destination)
+        {
+            return (Source.X == Destination.X && Source.Y == Destination.Y);
+        }
+    }
+}

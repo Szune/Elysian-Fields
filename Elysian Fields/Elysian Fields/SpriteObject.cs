@@ -13,17 +13,23 @@ namespace Elysian_Fields
         public int ID;
         public int EntityType;
         public string SpriteName;
+        public bool Walkable = true;
+        public bool MovePlayer;
+        public Coordinates RelativeMovePosition;
 
         public SpriteObject()
         {
 
         }
-        public SpriteObject(Texture2D sprite, int id, int entitytype, string name)
+        public SpriteObject(Texture2D sprite, int id, int entitytype, string name, bool walkthrough = true, bool _MovePlayer = false, Coordinates _MovePos = null)
         {
             Sprite = sprite;
             ID = id;
             EntityType = entitytype;
             SpriteName = name;
+            Walkable = walkthrough;
+            MovePlayer = _MovePlayer;
+            RelativeMovePosition = _MovePos;
         }
     }
 }

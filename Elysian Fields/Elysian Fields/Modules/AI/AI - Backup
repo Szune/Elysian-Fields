@@ -4,15 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Configuration;
 
-namespace Elysian_Fields
+namespace Elysian_Fields.Modules.AI
 {
     class AI
     {
         private Map map { get; set; }
 
         private int G = int.Parse(ConfigurationManager.AppSettings["G"]);
-
-        private DrawEngine draw = new DrawEngine();
 
         public AI() { }
 
@@ -36,15 +34,10 @@ namespace Elysian_Fields
             ClosedList.Add(Parent); // Lägg till startpunkten i listan med rutor vi inte behöver kolla
 
 
-
             while (!havePath)
             {
                 if (tries == 4 * 200) { break; }
                 Parent = LowestFScore(OpenList);
-                if (bool.Parse(ConfigurationManager.AppSettings["DebugMode"]))
-                {
-                    //draw.DrawObject(new Entity("F", new Coordinates(Parent.X, Parent.Y)));   // Endast för debugging
-                }
                 OpenList.Remove(Parent);
                 ClosedList.Add(Parent);
                 OpenList.AddRange(CheckAdjacentSquares(Parent, Parent, Destination, ClosedList, OpenList));
@@ -65,7 +58,7 @@ namespace Elysian_Fields
                 {
                     if (bool.Parse(ConfigurationManager.AppSettings["DebugMode"]))
                     {
-                        draw.DrawObject(new Entity("F", new Coordinates(Destination.X, Destination.Y)));      // Endast för debugging
+                        //draw.DrawObject(new Entity("F", new Coordinates(Destination.X, Destination.Y)));      // Endast för debugging
                     }
                     Destination = Destination.Parent;
                     path.Add(Destination);
@@ -79,25 +72,25 @@ namespace Elysian_Fields
         {
             List<Coordinates> WalkableSquares = new List<Coordinates>();
             
-            Coordinates CheckingSquare = new Coordinates(Square.X + Coordinates.Step, Square.Y); // East
+            Coordinates CheckingSquare = new Coordinates(Square.X + 1, Square.Y, Square.Z); // East
             if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination))
             {
-                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
+                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CheckingSquare.Z, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
             }
             
-            CheckingSquare = new Coordinates(Square.X - Coordinates.Step, Square.Y); // West
+            CheckingSquare = new Coordinates(Square.X - 1, Square.Y, Square.Z); // West
             if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination)) {
-                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
+                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CheckingSquare.Z, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
             }
 
-            CheckingSquare = new Coordinates(Square.X, Square.Y - Coordinates.Step); // North
+            CheckingSquare = new Coordinates(Square.X, Square.Y - 1, Square.Z); // North
             if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination)) {
-                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
+                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CheckingSquare.Z, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
             }
 
-            CheckingSquare = new Coordinates(Square.X, Square.Y + Coordinates.Step); // South
+            CheckingSquare = new Coordinates(Square.X, Square.Y + 1, Square.Z); // South
             if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination)) {
-                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
+                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CheckingSquare.Z, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
             }
 
             return WalkableSquares;

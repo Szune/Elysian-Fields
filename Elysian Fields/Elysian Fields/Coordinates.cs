@@ -9,32 +9,32 @@ namespace Elysian_Fields
     {
         public int X { get; set; }
         public int Y { get; set; }
-        public int H { get; set; } // heuristic used in the AI class
-        public int G { get; set; } // keep track of movement cost
-        public int F { get; set; } // H + G (total movement cost)
+        public int Z { get; set; }
 
         public const int Step = 32;
 
         public Coordinates Parent { get; set; }
 
-        public Coordinates() { X = 0; Y = 0; }
-
-        public Coordinates(int x, int y) { X = x; Y = y; G = 0; H = 0; F = 0; }
-
-        public Coordinates(int x, int y, int h) { X = x; Y = y; G = 0; H = h; F = 0 + h; }
-
-        public Coordinates(int x, int y, int h, int g) { X = x; Y = y; H = h; G = g; F = h + g; }
-
-        public Coordinates(int x, int y, int h, int g, Coordinates parent) { X = x; Y = y; H = h; G = g; F = h + g; Parent = parent; }
-
-        public bool hasParent()
+        public Coordinates() { X = 0; Y = 0; Z = 0; }
+        public Coordinates(Elysian_Fields.Modules.AI.Node node)
         {
-            return !object.Equals(Parent, default(Coordinates));
+            X = node.X;
+            Y = node.Y;
+            Z = node.Z;
         }
+
+        public Coordinates(int x, int y) { X = x; Y = y; }
+
+        public Coordinates(int x, int y, int z) { X = x; Y = y; Z = z; }
 
         public override string ToString()
         {
-            return "X: " + X.ToString() + " Y:" + Y.ToString();
+            return "X: " + X.ToString() + " Y: " + Y.ToString() + " Z: " + Z.ToString();
+        }
+
+        public static Coordinates Parse(Elysian_Fields.Modules.AI.Node node)
+        {
+            return new Coordinates(node);
         }
     }
 }

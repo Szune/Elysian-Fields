@@ -6,101 +6,110 @@ using System.Configuration;
 using Microsoft.Xna;
 using System.IO;
 using Microsoft.Xna.Framework;
+using Elysian_Fields.Modules.AI;
+using System.Threading.Tasks;
 
 namespace Elysian_Fields
 {
-    class Map
+    public sealed class Map
     {
-
-        public List<Tile> Tiles = new List<Tile>();
-        public List<Creature> Creatures = new List<Creature>();
-        public List<Player> Players = new List<Player>();
-        public List<Entity> Food = new List<Entity>();
-        public List<Item> WorldItems = new List<Item>();
-        public List<Item> ItemList = new List<Item>();
-
+        private static readonly Map instance = new Map();
+        internal List<Tile> Tiles = new List<Tile>();
+        internal List<Creature> Creatures = new List<Creature>();
+        internal List<Player> Players = new List<Player>();
+        internal List<Entity> Food = new List<Entity>();
+        internal List<Item> WorldItems = new List<Item>();
+        internal List<Item> ItemList = new List<Item>();
+        internal List<Creature> CreatureList = new List<Creature>();
+        internal List<NPC> NPCs = new List<NPC>();
+        internal List<Tile> DebugTiles_Pathfinding = new List<Tile>();
         private Random Generator = new Random();
+        internal Task PathfindingTask;
+        //private  PathfindingTask;
 
-        private Coordinates windowSize;
+        internal Coordinates windowSize;
 
-        public Map() { }
+        private Map() { }
 
-        public Map(Coordinates WindowSize) { windowSize = WindowSize; }
+        public static Map Instance
+        {
+            get
+            {
+                return instance;
+            }
+        }
 
-        public void GeneratePathFromCreature(Creature FromCreature, Coordinates Target)
+        // Map(Coordinates WindowSize) { windowSize = WindowSize; }
+
+        internal void GeneratePathFromCreature(Creature FromCreature, Coordinates Target, int DistanceTo = 20)
         {
             FromCreature.Destination = Target;
             FromCreature.ResetPath();
-            AI ai = new AI(this);
-            FromCreature.Path = ai.PathTo(Target, FromCreature.Position);
+            AI ai = new AI();
+            PathfindingTask = Task.Factory.StartNew(() =>
+            {    
+                 FromCreature.Path = ai.Monster_PathTo(Target, FromCreature.Position, DistanceTo);
+            }
+            );
+
+            //FromCreature.Path = ai.PathTo(Target, FromCreature.Position, DistanceTo);
         }
 
-        public void LoadMap(string mapn) // Redan kommenterad i PacMan - MapEditor
+        internal void GeneratePathFromPlayer(Creature FromCreature, Coordinates Target, int DistanceTo = 20)
         {
-            /*int SpawnX = 0;
-            int SpawnY = 0;*/
-            FileInfo file = new FileInfo(mapn);
-
-            if (file.Exists)
+            FromCreature.Destination = Target;
+            FromCreature.ResetPath();
+            AI ai = new AI();
+            PathfindingTask = Task.Factory.StartNew(() =>
             {
-                StreamReader read = new StreamReader(mapn);
-
-                string[] coordinateList = read.ReadLine().Split(",".ToCharArray());
-
-                for (int i = 0; i < coordinateList.Length; i++)
-                {
-                    string[] Coordinates = coordinateList[i].Split("|".ToCharArray());
-                    int x = int.Parse(Coordinates[0]);
-                    int y = int.Parse(Coordinates[1]);
-                    int spriteID = int.Parse(Coordinates[2]);
-
-                    Tiles.Add(new Tile("grass", spriteID, new Coordinates(x, y), i, true));
-                }
-
-                /*
-                    TODO: Change Players[0] to a variable ID to allow for multiplayer
-                */
-
-                //coordinateList = read.ReadLine().Split("|".ToCharArray());
-                /*SpawnX = int.Parse(coordinateList[0]);
-                SpawnY = int.Parse(coordinateList[1]);
-                Players[0].Position = new Coordinates(SpawnX, SpawnY);
-                Players[0].SpawnPosition = new Coordinates(SpawnX, SpawnY);*/
-
-                read.Close();
+                FromCreature.Path = ai.PathTo(Target, FromCreature.Position, DistanceTo);
             }
-            else
+            );
+
+            //FromCreature.Path = ai.PathTo(Target, FromCreature.Position, DistanceTo);
+        }
+
+        internal void LoadNPCs()
+        {
+            DirectoryInfo GetDir = new DirectoryInfo("Content\\Scripts\\NPCs");
+            FileInfo[] FilesInDir = GetDir.GetFiles();
+            for(int i = 0; i < FilesInDir.Length; i++)
             {
-                Players[0].Name = "Couldn't load map";
+                if (FilesInDir[i].Name != "funcs.lua")
+                {
+                    NPCs.Add(new NPC(FilesInDir[i].FullName));
+                }
             }
         }
 
-        public void GeneratePaths()
+        internal void GeneratePaths()
         {
             for (int i = 0; i < Creatures.Count; i++)
             {
-                if (GetPlayerByID(Creatures[i].TargetID).Health > 0)
+                Creatures[i].TargetID = Monster_FindTarget(Creatures[i]);
+                if (Creatures[i].TargetID != -1)
                 {
-                    if (Creatures[i].Health > 0) // && !IsAdjacent(Creatures[i], GetCreatureByID(Creatures[i].TargetID)))
+                    Player player = GetPlayerByID(Creatures[i].TargetID);
+                    if (player.Health > 0 && DistanceToDiagonal(player.Position, Creatures[i].Position) > 1 && DistanceToDiagonal(player.Position, Creatures[i].Position) < 14)
                     {
-                        if (!Creatures[i].hasPath() || (Creatures[i].hasPath() && !SamePosition(Players[0].Position, Creatures[i].Destination)))
+                        if (Creatures[i].Health > 0) // && !IsAdjacent(Creatures[i], GetCreatureByID(Creatures[i].TargetID)))
                         {
-                            /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
-                            GeneratePathFromCreature(Creatures[i], Players[0].Position);
-                            Coordinates next = Creatures[i].NextStep();
-                            if (next != null)
+                            if (!Creatures[i].hasPath() || (Creatures[i].hasPath() && !SamePosition(player.Position, Creatures[i].Destination)))
                             {
-                                Creatures[i].Position = new Coordinates(next.X, next.Y);
+                                GeneratePathFromCreature(Creatures[i], player.Position, 14);
+                                Coordinates next = Creatures[i].NextStep();
+                                if (next != null)
+                                {
+                                    Creatures[i].Position = new Coordinates(next.X, next.Y, Creatures[i].Position.Z);
+                                }
                             }
-                            //Creatures[i].Position = new Coordinates(next.X * Coordinates.Step, next.Y * Coordinates.Step);
-                            //draw.MoveObject(Creatures[i], Creatures[i].NextStep());
                         }
                     }
                 }
             }
         }
 
-        public void MovePlayer()
+        internal void MovePlayer()
         {
 /* TODO: Add multiplayer functionality and change Players[0] to a variable */
 
@@ -110,11 +119,52 @@ namespace Elysian_Fields
                 }
         }
 
-        public void MoveCreature(Entity creature, Coordinates step)
+        internal int Monster_FindTarget(Creature monster)
         {
-            if (IsTileWalkable(step) && DistanceTo(creature.Position, step) == Coordinates.Step)
+            int targetID = -1;
+            //StreamWriter debug = new StreamWriter("debug.txt", true);
+            //rectangle.x = monsterx-13
+            //rectangle.width = rectangle.x + 25
+            //rectangle.y = monstery - 9
+            //rectangle.height = rectangle.y + 17
+            Rectangle TargetArea;
+            TargetArea.X = monster.Position.X - 13;
+            TargetArea.Y = monster.Position.Y - 9;
+            TargetArea.Width = TargetArea.X + 25;
+            TargetArea.Height = TargetArea.Y + 17;
+            if (TargetArea.X < 0) { TargetArea.X = 0; TargetArea.Width += 1; }
+            if (TargetArea.Y < 0) { TargetArea.Y = 0; TargetArea.Height += 1; }
+
+            for (int i = 0; i < Players.Count; i++)
             {
-                creature.Position = new Coordinates(step.X, step.Y);
+                //debug.WriteLine("TargetAreaX = " + TargetArea.X + " TargetAreaY = " + TargetArea.Y + "TargetAreaWidth = " + TargetArea.Width + " TargetAreaHeight = " + TargetArea.Height + " | PlayerX = " + Players[i].Position.X + " PlayerY = " + Players[i].Position.Y + " PlayerZ = " + Players[i].Position.Z + " | MonsterZ = " + monster.Position.Z);
+                if (DistanceToDiagonal(monster.Position, Players[i].Position) < 15)
+                {
+                    if (TargetArea.Contains(Players[i].Position.X, Players[i].Position.Y) && monster.Position.Z == Players[i].Position.Z)
+                    {
+                        targetID = Players[i].ID;
+                    }
+                }
+            }
+
+            //debug.Close();
+
+            return targetID;
+        }
+
+        internal void MoveCreature(Entity creature, Coordinates step)
+        {
+            if (IsTileWalkable(step) && DistanceTo(creature.Position, step) == 1)
+            {
+                Tile walkTile = GetTopTileFromTile(step);
+                if (!walkTile.MovePlayer)
+                {
+                    creature.Position = new Coordinates(step.X, step.Y, step.Z);
+                }
+                else
+                {
+                    creature.Position = new Coordinates(step.X + walkTile.RelativeMovePosition.X, step.Y + walkTile.RelativeMovePosition.Y, step.Z + walkTile.RelativeMovePosition.Z);
+                }
             }
             //else
             //{
@@ -143,7 +193,7 @@ namespace Elysian_Fields
             //}
         }
 
-        public bool AllDead()
+        internal bool AllDead()
         {
             bool dead = true;
             for (int i = 0; i < Creatures.Count; i++)
@@ -157,7 +207,7 @@ namespace Elysian_Fields
             return dead;
         }
 
-        public int CreatureAttack(Creature creature, Player target)
+        internal int CreatureAttack(Creature creature, Player target)
         {
             if (CanAttack(creature, target))
             {
@@ -172,7 +222,7 @@ namespace Elysian_Fields
             return -1;
         }
 
-        public int PlayerAttack(Player player)
+        internal int PlayerAttack(Player player)
         {
 
             if (player.TargetID != -1)
@@ -180,13 +230,13 @@ namespace Elysian_Fields
                 Creature target = GetCreatureByID(player.TargetID);
                 if (target.Name != "null")
                 {
-                    if (CanAttack(player, target) && DistanceToDiagonal(player.Position, target.Position) < 46) // < 46 because when standing diagonal, the distance is 45, when standing directly in front, it is 32
+                    // TODO: Fix below so it works with the new coordinate system (which is screen coordinates / 32)
+                    if (CanAttack(player, target) && DistanceToDiagonal(player.Position, target.Position) < 2) // < 46 because when standing diagonal, the distance is 45, when standing directly in front, it is 32
                     {
                         int dmgDealt = target.ReceiveDamage(player.TotalStrength(), target.Defense);
                         if (target.Health < 1)
                         {
-                            player.ReceiveExperience(target.Experience);
-                            player.TargetID = -1;
+                            CreatureDie(target, player);
                         }
                         return dmgDealt;
                     }
@@ -195,7 +245,30 @@ namespace Elysian_Fields
             return -1;
         }
 
-        public List<DamageObject> PlayerCastSpell(Player player, Spell spell, Creature target, GameTime gameTime)
+        internal void CreatureDie(Creature creature, Player killer)
+        {
+            killer.ReceiveExperience(creature.Experience);
+            if (creature.LootList.Count > 0)
+            {
+                Random generator = new Random();
+                //generator.
+                for (int i = 0; i < 1; i++)
+                {
+                    //Decimal chance = (generator.Next(creature.LootList[i].LootChance * 100, 1 * 100));
+                    //chance = (Math.Round(chance / 10.0)) * 10;
+                    //if (chance >= 90)
+                        CreateWorldItemFromListItem(creature.LootList[i].SpriteID, creature.Position);
+                    //else
+                        //killer.Name = chance.ToString();
+                }
+            }
+            if (creature.ID == killer.TargetID)
+            {
+                killer.TargetID = -1;
+            }
+        }
+
+        internal List<DamageObject> PlayerCastSpell(Player player, Spell spell, Creature target, GameTime gameTime)
         {
             List<DamageObject> DamagedMonsters = new List<DamageObject>();
             int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
@@ -208,7 +281,7 @@ namespace Elysian_Fields
                         if (spell.Area[i + j])
                         {
                             /* TODO: Make area spell healing possible! */
-                            int creatureID = GetCreatureIDFromTile(new Coordinates(player.Position.X - Coordinates.Step + (i * Coordinates.Step), player.Position.Y - Coordinates.Step + (j * Coordinates.Step)));
+                            int creatureID = GetCreatureIDFromTile(new Coordinates(player.Position.X - 1 + (i), player.Position.Y - 1 + (j)));
                             if (creatureID != -1)
                             {
                                 Creature creature = GetCreatureByID(creatureID);
@@ -218,7 +291,7 @@ namespace Elysian_Fields
                                     DamagedMonsters.Add(new DamageObject(creature, DamageDealt, spell.HealSpell, currentTime, currentTime + DamageObject.DamageDuration));
                                     if (creature.Health < 1)
                                     {
-                                        player.ReceiveExperience(creature.Experience);
+                                        CreatureDie(creature, player);
                                     }
                                 }
                             }
@@ -248,7 +321,7 @@ namespace Elysian_Fields
                     DamagedMonsters.Add(new DamageObject(target, DamageDealt, spell.HealSpell, currentTime, currentTime + DamageObject.DamageDuration));
                     if (target.Health < 1)
                     {
-                        player.ReceiveExperience(target.Experience);
+                        CreatureDie(target, player);
                     }
                 }
             }
@@ -257,7 +330,7 @@ namespace Elysian_Fields
         }
 
 
-        public bool CanAttack(Creature creature, Creature target)
+        internal bool CanAttack(Creature creature, Creature target)
         {
             if (target.Health > 0 && creature.Health > 0)
             {
@@ -266,18 +339,7 @@ namespace Elysian_Fields
             return false;
         }
 
-        public void SetFoodEaten(Coordinates step)
-        {
-            for (int i = 0; i < Food.Count; i++)
-            {
-                if (SamePosition(step, Food[i].Position) && Food[i].Visible)
-                {
-                    Food[i].Visible = false;
-                }
-            }
-        }
-
-        public int GetEntityTypeFromTile(Coordinates Tile)
+        internal int GetEntityTypeFromTile(Coordinates Tile)
         {
             if (IsTileCreature(Tile)) return Entity.CreatureEntity;
             if (IsTilePlayer(Tile)) return Entity.PlayerEntity;
@@ -285,22 +347,22 @@ namespace Elysian_Fields
             return Entity.UnknownEntity;
         }
 
-        public bool IsAdjacent(Entity Object1, Entity Object2)
+        internal bool IsAdjacent(Entity Object1, Entity Object2)
         {
-            return (DistanceToDiagonal(Object2.Position, Object1.Position) < 46);
+            return (DistanceToDiagonal(Object2.Position, Object1.Position) < 2);
         }
 
-        public int DistanceTo(Coordinates Source, Coordinates Destination)
+        internal int DistanceTo(Coordinates Source, Coordinates Destination)
         {
             return (Math.Abs((Source.X - Destination.X) + Math.Abs(Source.Y - Destination.Y)));
         }
 
-        public int DistanceToDiagonal(Coordinates Source, Coordinates Destination)
+        internal int DistanceToDiagonal(Coordinates Source, Coordinates Destination)
         {
             return (int)Math.Sqrt(Math.Pow((Source.X - Destination.X), 2) + Math.Pow(Source.Y - Destination.Y, 2));
         }
 
-        public int GetTileIDFromTile(Coordinates Tile)
+        internal int GetTileIDFromTile(Coordinates Tile)
         {
             int TileID = -1;
             for (int i = 0; i < Tiles.Count; i++)
@@ -314,7 +376,21 @@ namespace Elysian_Fields
             return TileID;
         }
 
-        public Tile GetTileByID(int ID)
+        internal bool GetTileWalkable(Coordinates Tile)
+        {
+            bool walk = true;
+            for (int i = 0; i < Tiles.Count; i++)
+            {
+                if (SamePosition(Tile, Tiles[i].Position) && !Tiles[i].Walkable)
+                {
+                    walk = false;
+                    break;
+                }
+            }
+            return walk;
+        }
+
+        internal Tile GetTileByID(int ID)
         {
             int TileID = -1;
             for (int i = 0; i < Tiles.Count; i++)
@@ -333,31 +409,41 @@ namespace Elysian_Fields
 
             return Tiles[TileID];
         }
-        
-        public void DragItem(Item item, Coordinates Target)
+
+        internal void DragItem(Item item, Coordinates Target)
+        {
+            if (IsTileThrowable(Target) && AdjacentToItem(Players[0], item))
+            {
+                item.Z_order = GetTopItemFromTile(Target).Z_order + 1;
+                item.Position = new Coordinates(Target.X, Target.Y, Target.Z);
+            }
+        }
+
+        internal bool IsTileThrowable(Coordinates Target)
         {
             bool tileThrowable = true;
 
             int TileID = GetTileIDFromTile(Target);
             if (TileID != -1) /* TODO: When map is finished, IsTileWalkable() should return false; if TileID == -1 (it should not be possible to walk where there is no sprite)*/
             {
-                tileThrowable = GetTileByID(TileID).Walkable;
+                tileThrowable = GetTileWalkable(Target);
             }
-            if (tileThrowable)
+            else
             {
-                tileThrowable = AdjacentToItem(Players[0], item);
+                tileThrowable = false;
             }
-            if (tileThrowable)
-            {
-                item.Position = new Coordinates(Target.X, Target.Y);
-            }
+            return tileThrowable;
         }
 
-        public bool AdjacentToItem(Player player, Item item)
+        internal bool AdjacentToItem(Player player, Item item)
         {
-            if (DistanceToDiagonal(Players[0].Position, item.Position) < 46)
+            if (DistanceToDiagonal(Players[0].Position, item.Position) < 2)
             {
-                return true;
+                if (item.Position.Z == Players[0].Position.Z)
+                {
+                    return true;
+                }
+                return false;
             }
             else
             {
@@ -365,8 +451,45 @@ namespace Elysian_Fields
             }
         }
 
-        public void EquipItem(Item item, UI equipment, UI sourceEquipment = null, bool haveToBeAdjacent = true)
+        internal Item GetTopItemFromTile(Coordinates Tile)
         {
+            List<Item> TileItems = new List<Item>();
+            for(int i = 0; i < WorldItems.Count; i++)
+            {
+                if(SamePosition(WorldItems[i].Position, Tile))
+                {
+                    TileItems.Add(WorldItems[i]);
+                }
+            }
+            if (TileItems.Count > 0)
+            {
+                TileItems.Sort((a, b) => a.Z_order.CompareTo(b.Z_order));
+                return TileItems[TileItems.Count - 1];
+            }
+            return new Item();
+        }
+
+        internal Tile GetTopTileFromTile(Coordinates Tile)
+        {
+            List<Tile> TileItems = new List<Tile>();
+            for (int i = 0; i < Tiles.Count; i++)
+            {
+                if (SamePosition(Tiles[i].Position, Tile))
+                {
+                    TileItems.Add(Tiles[i]);
+                }
+            }
+            if (TileItems.Count > 0)
+            {
+                TileItems.Sort((a, b) => a.Z_order.CompareTo(b.Z_order));
+                return TileItems[TileItems.Count - 1];
+            }
+            return new Tile("");
+        }
+
+        internal void EquipItem(Item item, UI equipment, UI sourceEquipment = null, bool haveToBeAdjacent = true)
+        {
+            // TODO: Change when adding multiplayer
             if (AdjacentToItem(Players[0], item) || haveToBeAdjacent == false)
             {
                 if (Players[0].EquippedItems.IsItemSlotEmpty(equipment.Name))
@@ -375,6 +498,7 @@ namespace Elysian_Fields
                     {
                         item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
                         item.Slot = equipment.Name;
+                        item.WearingPlayerID = Players[0].ID;
                         Players[0].EquipItem(item, equipment.Name);
 
                         if (sourceEquipment != null)
@@ -386,36 +510,67 @@ namespace Elysian_Fields
             }
         }
 
-        public void UnequipItem(Item item, UI equipment, Coordinates target)
+        internal void UnequipItem(Item item, UI equipment, Coordinates target)
         {
-            item.Slot = null;
-            item.Position = new Coordinates(target.X, target.Y);
-            Players[0].UnequipItem(equipment.Name);
+            if (IsTileThrowable(target))
+            {
+                item.Slot = null;
+                item.WearingPlayerID = -1;
+                item.Z_order = GetTopItemFromTile(target).Z_order + 1;
+                item.Position = new Coordinates(target.X, target.Y, target.Z);
+                Players[0].UnequipItem(equipment.Name);
+            }
         }
 
-        public void ThrowItemFromBag(Item item, Coordinates target)
+        internal void ThrowItemFromBag(Item item, Coordinates target)
         {
-            item.Slot = null;
-            item.Position = new Coordinates(target.X, target.Y);
-            item.Parent.RemoveItem(item);
+            if (IsTileThrowable(target))
+            {
+                item.Slot = null;
+                item.Z_order = GetTopItemFromTile(target).Z_order + 1;
+                item.Position = new Coordinates(target.X, target.Y, target.Z);
+                item.Parent.RemoveItem(item);
+            }
         }
 
-        public void ThrowItemToBag(Item item, Backpack Bag, Coordinates target, UI SourceEquipment = null, Backpack Parent = null)
+        internal void ThrowItemToBag(Item item, Backpack Bag, Coordinates target, UI SourceEquipment = null, Backpack Parent = null)
         {
             if (Parent != null)
             {
                 Parent.RemoveItem(item);
+                item.Slot = null;
+                item.WearingPlayerID = Players[0].ID;
+                item.Position = new Coordinates(target.X, target.Y);
+                Bag.AddItem(item);
+                if (SourceEquipment != null)
+                {
+                    Players[0].UnequipItem(SourceEquipment.Name);
+                }
             }
-            item.Slot = null;
-            item.Position = new Coordinates(target.X, target.Y);
-            Bag.AddItem(item);
-            if (SourceEquipment != null)
+            else
             {
-                Players[0].UnequipItem(SourceEquipment.Name);
+                if(SourceEquipment != null)
+                {
+                    item.Slot = null;
+                    item.WearingPlayerID = Players[0].ID;
+                    item.Position = new Coordinates(target.X, target.Y);
+                    Bag.AddItem(item);
+                    Players[0].UnequipItem(SourceEquipment.Name);
+                }
+                else
+                {
+                    if (AdjacentToItem(Players[0], item))
+                    {
+                        item.Slot = null;
+                        item.WearingPlayerID = Players[0].ID;
+                        item.Position = new Coordinates(target.X, target.Y);
+                        Bag.AddItem(item);
+                    }
+                }
             }
         }
 
-        public void EquipItemFromBag(Item item, UI equipment)
+        internal void EquipItemFromBag(Item item, UI equipment)
         {
             if (Players[0].EquippedItems.IsItemSlotEmpty(equipment.Name))
             {
@@ -423,31 +578,96 @@ namespace Elysian_Fields
                 {
                     item.Position = new Coordinates(equipment.Position.X, equipment.Position.Y);
                     item.Slot = equipment.Name;
+                    item.WearingPlayerID = Players[0].ID;
                     item.Parent.RemoveItem(item);
                     Players[0].EquipItem(item, equipment.Name);
                 }
             }
         }
 
-        public bool IsTileWalkable(Coordinates Tile)
+        internal Item CreateWorldItemFromListItem(int ID, Coordinates pos = null)
+        {
+            Item newItem;
+            if (pos == null) { pos = new Coordinates(0, 0); }
+            for (int i = 0; i < ItemList.Count; i++)
+            {
+                if (ItemList[i].ID == ID)
+                {
+                    newItem = new Item(ItemList[i].Name, ItemList[i].WearSlot, pos, ItemList[i].SpriteID, WorldItems.Count + 1, ItemList[i].Strength, ItemList[i].Defense, ItemList[i].Visible);
+                    WorldItems.Add(newItem);
+                    return WorldItems[WorldItems.Count - 1];
+                }
+            }
+
+            return new Item();
+        }
+
+        internal void CreateCreatureFromCreatureList(int ID, Coordinates pos = null)
+        {
+            Creature newCreature;
+            if (pos == null) { pos = new Coordinates(0, 0, 0); }
+            for (int i = 0; i < CreatureList.Count; i++)
+            {
+                if (CreatureList[i].ID == ID)
+                {
+                    newCreature = new Creature(CreatureList[i].Name, pos, Players[0].ID, CreatureList[i].Strength, CreatureList[i].Health, Creatures.Count, CreatureList[i].Defense, CreatureList[i].Experience, CreatureList[i].LootList, CreatureList[i].SpriteID);
+                    Creatures.Add(newCreature);
+                }
+            }
+        }
+
+        internal void NPC_CreateCreature(int ID, int x, int y, int z)
+        {
+            CreateCreatureFromCreatureList(ID, new Coordinates(x, y, z));
+        }
+
+        internal void NPC_CreateItem(int ID, int x, int y, int z)
+        {
+            CreateWorldItemFromListItem(ID, new Coordinates(x, y, z));
+        }
+
+        internal bool IsTileWalkable(Coordinates Tile)
         {
             bool tileWalkable = true;
 
             int TileID = GetTileIDFromTile(Tile);
-            if (TileID != -1) /* TODO: When map is finished, IsTileWalkable() should return false; if TileID == -1 (it should not be possible to walk where there is no sprite)*/
+            if (TileID != -1)
             {
-                tileWalkable = GetTileByID(TileID).Walkable;
+                tileWalkable = GetTileWalkable(Tile);
+            }
+            else
+            {
+                return false;
             }
 
             if (tileWalkable) { tileWalkable = !IsTilePlayer(Tile); }
             if (tileWalkable) { tileWalkable = !IsTileCreature(Tile); }
-            if (tileWalkable) { tileWalkable = !IsTileFood(Tile); }
+            if (tileWalkable) { tileWalkable = !IsTileNPC(Tile); }
             if (tileWalkable) { tileWalkable = !OutOfBoundaries(Tile); }
 
             return tileWalkable;
         }
 
-        public bool IsTilePlayer(Coordinates Tile)
+        internal bool AI_IsTileWalkable(Coordinates Tile)
+        {
+            bool tileWalkable = true;
+
+            int TileID = GetTileIDFromTile(Tile);
+            if (TileID != -1)
+            {
+                tileWalkable = GetTileWalkable(Tile);
+            }
+            else
+            {
+                return false;
+            }
+
+            if (tileWalkable) { tileWalkable = !OutOfBoundaries(Tile); }
+
+            return tileWalkable;
+        }
+
+        internal bool IsTilePlayer(Coordinates Tile)
         {
             /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
             if (SamePosition(Tile, Players[0].Position) && Players[0].Health > 0)
@@ -457,7 +677,7 @@ namespace Elysian_Fields
             return false;
         }
 
-        public bool IsTileCreature(Coordinates Tile)
+        internal bool IsTileCreature(Coordinates Tile)
         {
             bool tileCreature = false;
             for (int i = 0; i < Creatures.Count; i++)
@@ -471,12 +691,26 @@ namespace Elysian_Fields
             return tileCreature;
         }
 
-        public bool IsTileAnimate(Coordinates Tile)
+        internal bool IsTileNPC(Coordinates Tile)
+        {
+            bool tileNPC = false;
+            for (int i = 0; i < NPCs.Count; i++)
+            {
+                if (SamePosition(Tile, NPCs[i].Position))
+                {
+                    tileNPC = true;
+                    break;
+                }
+            }
+            return tileNPC;
+        }
+
+        internal bool IsTileAnimate(Coordinates Tile)
         {
             return IsTileCreature(Tile) || IsTilePlayer(Tile);
         }
 
-        public bool IsTileFood(Coordinates Tile)
+        internal bool IsTileFood(Coordinates Tile)
         {
             bool tileFood = false;
             for (int i = 0; i < Food.Count; i++)
@@ -490,7 +724,7 @@ namespace Elysian_Fields
             return tileFood;
         }
 
-        public int GetCreatureIDFromTile(Coordinates Tile)
+        internal int GetCreatureIDFromTile(Coordinates Tile)
         {
             int CreatureID = -1;
             for (int i = 0; i < Creatures.Count; i++)
@@ -504,7 +738,7 @@ namespace Elysian_Fields
             return CreatureID;
         }
 
-        public Creature GetCreatureByID(int ID)
+        internal Creature GetCreatureByID(int ID)
         {
             int CreatureID = -1;
             for (int i = 0; i < Creatures.Count; i++)
@@ -523,7 +757,7 @@ namespace Elysian_Fields
             return Creatures[CreatureID];
         }
 
-        public Player GetPlayerByID(int ID)
+        internal Player GetPlayerByID(int ID)
         {
             /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
             for (int i = 0; i < Players.Count;i++)
@@ -538,7 +772,7 @@ namespace Elysian_Fields
             //return Players[0];
         }
 
-        public Entity GetCreatureByName(string Name)
+        internal Entity GetCreatureByName(string Name)
         {
             int CreatureID = -1;
             for (int i = 0; i < Creatures.Count; i++)
@@ -556,14 +790,47 @@ namespace Elysian_Fields
             return Creatures[CreatureID];
         }
 
-        public bool SamePosition(Coordinates Source, Coordinates Destination)
+        internal bool SamePosition(Coordinates Source, Coordinates Destination, bool CheckZ = true)
         {
-            return (Source.X == Destination.X && Source.Y == Destination.Y);
+            if(CheckZ)
+                return (Source.X == Destination.X && Source.Y == Destination.Y && Source.Z == Destination.Z);
+            else
+                return (Source.X == Destination.X && Source.Y == Destination.Y);
         }
 
-        public bool OutOfBoundaries(Coordinates Coordinates)
+        internal bool TileAbove(Coordinates Position)
         {
-            return !(Coordinates.X >= 0 && Coordinates.Y >= 0 && Coordinates.X < windowSize.X && Coordinates.Y < windowSize.Y);
+            for(int i = 0; i < Tiles.Count; i++)
+            {
+                if(IsAbove(Tiles[i].Position, Position))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        internal int TopTileZ(Coordinates Tile)
+        {
+            int currentTopZ = Utility.MinZ;
+            for (int i = 0; i < Tiles.Count; i++)
+            {
+                if (SamePosition(Tiles[i].Position, Tile, false) && Tiles[i].Position.Z > currentTopZ)
+                {
+                    currentTopZ = Tiles[i].Position.Z;
+                }
+            }
+            return currentTopZ;
+        }
+
+        internal bool IsAbove(Coordinates Destination, Coordinates Source)
+        {
+            return (Source.X == Destination.X && Source.Y == Destination.Y && Source.Z < Destination.Z);
+        }
+
+        internal bool OutOfBoundaries(Coordinates Coordinates)
+        {
+            return !(Coordinates.X >= 0 && Coordinates.Y >= 0 && Coordinates.X < Utility.MaxX && Coordinates.Y < Utility.MaxY);
         }
     }
 }
