@@ -813,21 +813,22 @@ namespace Elysian_Fields
             {
                 if (Keyboard.GetState().IsKeyDown(Keys.Enter))
                 {
-                    if(GetTextboxByName("Chat").Text == "clear")
+                    /*if(GetTextboxByName("Chat").Text == "clear")
                     {
                         map.DebugTiles_Pathfinding.Clear();
                         return;
-                    }
+                    }*/
                     for (int i = 0; i < map.NPCs.Count; i++)
                     {
-                        if (map.NPCs[i].Name == "Protester")
+                        ChatPopUps.Add(new Animation(3000, 0, 0, (int)gameTime.TotalGameTime.TotalMilliseconds, GetTextboxByName("Chat").Text, 0, new Coordinates(map.Players[0].Position.X, map.Players[0].Position.Y)));
+                        string npcChat = map.NPCs[i].Chat(GetTextboxByName("Chat").Text.ToLower(), map.Players[0]);
+                        if (npcChat.Length > 0)
                         {
-                            ChatPopUps.Add(new Animation(3000, 0, 0, (int)gameTime.TotalGameTime.TotalMilliseconds, GetTextboxByName("Chat").Text, 0, new Coordinates(map.Players[0].Position.X, map.Players[0].Position.Y)));
-                            ChatPopUps.Add(new Animation(3000, 0, 0, (int)gameTime.TotalGameTime.TotalMilliseconds, map.NPCs[i].Chat(GetTextboxByName("Chat").Text.ToLower(), map.Players[0]), 0, new Coordinates(map.NPCs[i].Position.X, map.NPCs[i].Position.Y)));
-                            GetTextboxByName("Chat").Text = "";
-                            TimeOfLastKeyPress = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                            ChatPopUps.Add(new Animation(3000, 0, 0, (int)gameTime.TotalGameTime.TotalMilliseconds, npcChat, 0, new Coordinates(map.NPCs[i].Position.X, map.NPCs[i].Position.Y)));
                         }
                     }
+                    GetTextboxByName("Chat").Text = "";
+                    TimeOfLastKeyPress = (int)gameTime.TotalGameTime.TotalMilliseconds;
                 }
             }
         }
