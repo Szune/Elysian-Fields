@@ -34,7 +34,9 @@ namespace Elysian_Fields
         public List<Node> Path = new List<Node>();
 
         public int SuperPowerSteps { get; set; }
-        public Coordinates Destination { get; set; }
+        public Coordinates Destination = new Coordinates();
+
+        public List<Spell> Spells = new List<Spell>();
 
         public int TargetID { get; set; }
 
@@ -47,6 +49,8 @@ namespace Elysian_Fields
 
         public int MagicStrength { get; set; }
 
+        public double HealthPercent { get { return (double)Health / (double)MaxHealth; } }
+
 
         public int MaxMana { get; set; }
         public int Mana { get; set; }
@@ -56,6 +60,9 @@ namespace Elysian_Fields
 
         public int TimeOfLastAttack;
 
+        public int Exhaustion { get; set; }
+        public int ManaSpent { get; set; }
+
 
         public Creature()
         {
@@ -63,7 +70,7 @@ namespace Elysian_Fields
         }
         public Creature(string name, int id = -1) { Name = name; MaxHealth = 1; Health = 1; ID = id; }
 
-        public Creature(string name, Coordinates coordinates, int targetID, int strength = 1, int health = 1, int id = 0, int defense = 0, int experience = 1, List<Loot> loot = null, int spriteid = 0)
+        public Creature(string name, Coordinates coordinates, int targetID, int magicstr = 0, int strength = 1, int health = 1, int id = 0, int defense = 0, int experience = 1, int spriteid = 0, List<Loot> loot = null, List<Spell> spell = null)
         {
             /* Spöken */
             Name = name;
@@ -80,9 +87,15 @@ namespace Elysian_Fields
             TimeOfLastAttack = 0;
             Defense = defense;
             Experience = experience;
+            MagicStrength = magicstr;
+
             if(loot != null)
             {
                 LootList.AddRange(loot);
+            }
+            if(spell != null)
+            {
+                Spells.AddRange(spell);
             }
             SpriteID = spriteid;
         }
@@ -144,6 +157,36 @@ namespace Elysian_Fields
             Health = MaxHealth;
             MaxMana += 15;
             Mana = MaxMana;
+        }
+
+        public bool IsExhausted(int CurrentTime, Spell castSpell)
+        {
+            if (CurrentTime - Exhaustion > castSpell.Cooldown)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool CastSpell(Spell spell, int CurrentTime)
+        {
+            if (!IsExhausted(CurrentTime, spell) && Mana >= spell.ManaCost)
+            {
+                if (EntityType == Entity.PlayerEntity)
+                {
+                    SpendMana(spell.ManaCost);
+                }
+                Exhaustion = CurrentTime;
+                return true;
+            }
+            return false;
+        }
+
+        public void SpendMana(int mana)
+        {
+            Mana -= mana;
+            ManaSpent += mana;
+            if (ManaSpent > Utility.ManaSpentNeededForMagicStrength(MagicStrength)) { MagicStrength += 1; }
         }
 
         public bool hasPath()

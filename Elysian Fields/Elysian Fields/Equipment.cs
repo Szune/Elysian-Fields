@@ -161,13 +161,13 @@ namespace Elysian_Fields
             {
                 List<Item> AllItems = new List<Item>();
                 AllItems = Bag.Container.GetAllItemsFromNestedBags(Bag);
-                bags += Bag.SpriteID + ";" + Bag.ID + ";-1";
+                bags += Bag.RealID + ";" + Bag.ID + ";-1";
 
                 for (int i = 0; i < AllItems.Count; i++)
                 {
                     if (AllItems[i].WearSlot == ItemSlot.Bag)
                     {
-                        bags += "+" + AllItems[i].SpriteID + ";" + AllItems[i].ID + ";" + AllItems[i].ParentID;
+                        bags += "+" + AllItems[i].RealID + ";" + AllItems[i].ID + ";" + AllItems[i].ParentID;
                     }
                 }
 
@@ -177,11 +177,11 @@ namespace Elysian_Fields
                     {
                         if(!first)
                         {
-                            items += "+" +AllItems[i].SpriteID + ";" + AllItems[i].ParentID;
+                            items += "+" +AllItems[i].RealID + ";" + AllItems[i].ParentID;
                         }
                         else
                         {
-                            items += AllItems[i].SpriteID + ";" + AllItems[i].ParentID;
+                            items += AllItems[i].RealID + ";" + AllItems[i].ParentID;
                             first = false;
                         }                       
                     }
@@ -191,17 +191,17 @@ namespace Elysian_Fields
 
             if (bags != "Bags:.")
             {
-                return LeftHand.SpriteID + "," + RightHand.SpriteID + "," + Helmet.SpriteID + "," + Armor.SpriteID + "," + Legs.SpriteID + "," + bags + items;
+                return LeftHand.RealID + "," + RightHand.RealID + "," + Helmet.RealID + "," + Armor.RealID + "," + Legs.RealID + "," + bags + items;
             }
             else
             {
                 if (Bag.ID != -1)
                 {
-                    return LeftHand.SpriteID + "," + RightHand.SpriteID + "," + Helmet.SpriteID + "," + Armor.SpriteID + "," + Legs.SpriteID + ",Bags:" + Bag.SpriteID + ";" + Bag.ID + ".Items:-1";
+                    return LeftHand.RealID + "," + RightHand.RealID + "," + Helmet.RealID + "," + Armor.RealID + "," + Legs.RealID + ",Bags:" + Bag.RealID + ";" + Bag.ID + ".Items:-1";
                 }
                 else
                 {
-                    return LeftHand.SpriteID + "," + RightHand.SpriteID + "," + Helmet.SpriteID + "," + Armor.SpriteID + "," + Legs.SpriteID + ",Bags:-1.Items:-1";
+                    return LeftHand.RealID + "," + RightHand.RealID + "," + Helmet.RealID + "," + Armor.RealID + "," + Legs.RealID + ",Bags:-1.Items:-1";
                 }
             }
         }

@@ -30,20 +30,66 @@ namespace Elysian_Fields
     class Spell
     {
         public int Damage;
-        public bool[] Area;
+        public double[] Area;
         public Texture2D Sprite;
         public int ID;
         public int ManaCost;
+        public string Name;
         public const int ExhaustionTime = 500; // Milliseconds
         public bool HealSpell;
         public bool TargetSpell;
+        public bool AreaSpell;
+        public int Cooldown;
+
+        dynamic lua = new DynamicLua.DynamicLua();
+        string PathToLua;
 
         public Spell()
         {
             ID = -1;
         }
 
-        public Spell(bool[] area, int damage, Texture2D sprite, int manacost = 0, bool healspell = false, bool targetspell = false, int id = 0)
+        public Spell(string path)
+        {
+            LoadScript(path);
+        }
+
+        public void LoadScript(string path)
+        {
+            Storage storage = Storage.Instance;
+            PathToLua = path;
+            lua.DoFile(path);
+            Name = (string)lua.Name;
+            if(lua.Spell_Area == true)
+            {
+                AreaSpell = true;
+                DynamicLua.DynamicLuaTable tab = lua.Area;
+
+                int i = 0;
+                foreach(KeyValuePair<object, object> kvp in tab)
+                {
+                    i++;
+                }
+
+                Area = new double[i];
+
+                i = 0;
+                foreach (KeyValuePair<object, object> kvp in tab)
+                {
+                    Area[i] = (double)kvp.Value;
+                    i++;
+                }
+            }
+            Damage = (int)lua.Damage;
+            Sprite = storage.GetSpriteByName((string)lua.SpriteName);
+            ManaCost = (int)lua.Mana_Cost;
+            HealSpell = lua.Spell_Heal;
+            TargetSpell = lua.Spell_RequireTarget;
+            ID = (int)lua.ID;
+            Cooldown = (int)lua.Cooldown;
+        }
+
+        public Spell(double[] area, int damage, Texture2D sprite, int manacost = 0, bool healspell = false, bool targetspell = false, int id = 0)
         {
             Area = area;
             Damage = damage;

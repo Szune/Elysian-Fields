@@ -1,8 +1,30 @@
-﻿using System;
+﻿/*
+    Elysian Fields is a 2D game programmed in C# with the framework MonoGame
+    Copyright (C) 2015 Erik Iwarson
+
+    If you have any questions, don't hesitate to send me an e-mail at erikiwarson@gmail.com
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Configuration;
+using Microsoft.Xna.Framework;
 
 namespace Elysian_Fields.Modules.AI
 {
@@ -13,27 +35,117 @@ namespace Elysian_Fields.Modules.AI
         private int G = int.Parse(ConfigurationManager.AppSettings["G"]);
 
         private List<Node> OpenList = new List<Node>(); // Den öppna listan med rutor som vi fortfarande kollar
-        private List<Node> ClosedList = new List<Node>(); // Den stängda listan med rutor som vi inte behöver kolla längre
+        private HashSet<Node> ClosedList = new HashSet<Node>(); // Den stängda listan med rutor som vi inte behöver kolla längre
+        private HashSet<Node> BlockedTiles = new HashSet<Node>();
+
         private Node sourcePos = new Node();
         private Node Destination = new Node();
         private int maxDistance = 20;
+        private int CloseEnough = 1;
 
-        public AI() { }
+        public AI() { map = Map.Instance; }
 
-        public AI(Map mapEngine)
+        public enum Direction
         {
-            map = mapEngine;
+            TooClose,
+            North,
+            East,
+            South,
+            West,
+            NorthEast,
+            SouthEast,
+            NorthWest,
+            SouthWest
         }
 
-        public List<Node> PathTo(Coordinates Target, Coordinates FromCreature, int _maxDistance = 20)
-        { 
+
+        public List<Node> Monster_PathTo(Coordinates Target, Coordinates FromCreature, int _maxDistance = 20)
+        {
             //List<Node> OpenList = new List<Node>(); // Den öppna listan med rutor som vi fortfarande kollar
             //List<Node> ClosedList = new List<Node>(); // Den stängda listan med rutor som vi inte behöver kolla längre
             Node Parent = new Node(FromCreature.X, FromCreature.Y, FromCreature.Z); // Parent-rutan
             Destination = new Node(Target.X, Target.Y, Target.Z); // Destinationen
+            sourcePos = new Node(FromCreature.X, FromCreature.Y, FromCreature.Z);
             int tries = 0;
             bool havePath = false;
+            maxDistance = _maxDistance;
+
+            PopulateBlockedTilesList();
+
+            /* TODO: Add only the bare minimum of tiles, creatures, players and NPCs that are necessary to
+                     perform the pathfinding to their respective lists */
+
+            OpenList.Add(Parent); // Lägg till startpunkten
+           
+            CheckAdjacentSquares(Parent); // Lägg till de rutor runtom som går att gå på i den öppna listan
+            OpenList.Remove(Parent); // Ta bort startpunkten
+            ClosedList.Add(Parent); // Lägg till startpunkten i listan med rutor vi inte behöver kolla
+
+            if(SamePosition(Parent, Destination))
+            {
+                havePath = true;
+                Destination = Parent;
+            }
+
+            while (!havePath)
+            {
+                if (OpenList.Count == 0 && havePath == false) { break; }
+                if (tries == 200) { break; }
+                Parent = LowestFScore();
+                OpenList.RemoveAt(0);
+                ClosedList.Add(Parent);
+                CheckAdjacentSquares(Parent);
+
+                if (ClosedList.Contains(Destination)) { havePath = true; }
+
+                if (tries > 100)
+                {
+                    Node CloseEnough = IsTileCloseEnough(Destination, ClosedList);
+                    if (CloseEnough.X != -1500)
+                    {
+                        Destination = CloseEnough;
+                        havePath = true;
+                    }
+                }
+
+                tries += 1;
+            }
+
+            List<Node> path = new List<Node>();
+
+
+            if (havePath)
+            {
+                Destination = GetTileInSet(Destination, ClosedList);
+                path.Add(Destination);
+                while (Destination.hasParent())
+                {
+                    Destination = Destination.Parent;
+                    path.Add(Destination);
+                }
+            }
+
+            OpenList.Clear();
+            ClosedList.Clear();
+
+            return path;
+        }
+
+        public void PopulateBlockedTilesList()
+        {
+            BlockedTiles.Clear();
+            BlockedTiles = map.GetBlockedTiles(sourcePos);
+        }
+
+        public List<Node> PathTo(Coordinates Target, Coordinates FromCreature, int _maxDistance = 20)
+        {
+            //List<Node> OpenList = new List<Node>(); // Den öppna listan med rutor som vi fortfarande kollar
+            //List<Node> ClosedList = new List<Node>(); // Den stängda listan med rutor som vi inte behöver kolla längre
+            Node Parent = new Node(FromCreature.X, FromCreature.Y, FromCreature.Z); // Parent-rutan
+            Destination = new Node(Target.X, Target.Y, Target.Z); // Destinationen
             sourcePos = new Node(FromCreature.X, FromCreature.Y,  FromCreature.Z);
+            int tries = 0;
+            bool havePath = false;
             maxDistance = _maxDistance;
 
             OpenList.Add(Parent); // Lägg till startpunkten
@@ -42,17 +154,22 @@ namespace Elysian_Fields.Modules.AI
             OpenList.Remove(Parent); // Ta bort startpunkten
             ClosedList.Add(Parent); // Lägg till startpunkten i listan med rutor vi inte behöver kolla
 
-
             while (!havePath)
             {
                 if (OpenList.Count == 0 && havePath == false) { break; }
-                if (tries == 200) { break; }
+                if (tries == 200) { Destination = LowestFScore(); break; }
                 Parent = LowestFScore();
                 OpenList.Remove(Parent);
                 ClosedList.Add(Parent);
                 CheckAdjacentSquares(Parent);
 
-                if (IsTileInList(Destination, ClosedList)) { havePath = true; }
+                if (ClosedList.Contains(Destination)) { havePath = true; }
+
+                /*if (tries > 50 && IsTileCloseEnough(Destination, ClosedList))
+                {
+                    havePath = true;
+                }*/
+
                 tries += 1;
             }
 
@@ -61,7 +178,7 @@ namespace Elysian_Fields.Modules.AI
 
             if (havePath)
             {
-                Destination = GetTileInList(Destination, ClosedList);
+                Destination = GetTileInSet(Destination, ClosedList);
                 path.Add(Destination);
                 while (Destination.hasParent())
                 {
@@ -69,6 +186,9 @@ namespace Elysian_Fields.Modules.AI
                     path.Add(Destination);
                 }
             }
+
+            OpenList.Clear();
+            ClosedList.Clear();
 
             return path;
         }
@@ -116,7 +236,7 @@ namespace Elysian_Fields.Modules.AI
 
         public bool IsTileWalkable(Node Tile)
         {
-            return (map.IsTileWalkable(Coordinates.Parse(Tile)) && !IsTileInList(Tile, ClosedList) && !IsTileInList(Tile, OpenList));
+            return (!BlockedTiles.Contains(Tile) && !map.OutOfBoundaries(Coordinates.Parse(Tile)) && !ClosedList.Contains(Tile) && !IsTileInList(Tile, OpenList));
         }
 
         public void InsertSquareInList(Node Square)
@@ -192,24 +312,42 @@ namespace Elysian_Fields.Modules.AI
 
         public bool IsTileInList(Node Tile, List<Node> List)
         {
-            bool isClosed = false;
             for (int i = 0; i < List.Count; i++)
             {
-                if (List[i].X == Tile.X && List[i].Y == Tile.Y) { isClosed = true; }
+                if (List[i].X == Tile.X && List[i].Y == Tile.Y) { return true; }
             }
 
-            return isClosed;
+            return false;
         }
 
-        public Node GetTileInList(Node Tile, List<Node> List)
-        {
-            Node TileNode = new Node();
-            for (int i = 0; i < List.Count; i++)
+        public Node IsTileCloseEnough(Node Tile, HashSet<Node> List)
+        {            
+            foreach(Node node in List)
             {
-                if (List[i].X == Tile.X && List[i].Y == Tile.Y) { TileNode = List[i]; break; }
+                if(DistanceToDiagonal(node, Tile) <= CloseEnough) { return node; }
             }
 
-            return TileNode;
+            return new Node(-1500,0,0);
+        }
+
+        /*public Node GetTileInList(Node Tile, List<Node> List)
+        {
+            for (int i = 0; i < List.Count; i++)
+            {
+                if (List[i].X == Tile.X && List[i].Y == Tile.Y) { return List[i]; }
+            }
+
+            return new Node();
+        }*/
+
+        public Node GetTileInSet(Node Tile, HashSet<Node> List)
+        {
+            foreach(Node node in List)
+            { 
+                if (node.X == Tile.X && node.Y == Tile.Y) { return node; }
+            }
+
+            return new Node();
         }
 
 

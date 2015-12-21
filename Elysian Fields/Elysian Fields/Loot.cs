@@ -28,15 +28,17 @@ namespace Elysian_Fields
 {
     class Loot : Item
     {
-        public Decimal LootChance;
+        public int LootChance;
 
         public Loot(Item item)
         {
             this.SpriteID = item.SpriteID;
+            this.RealID = item.RealID;
         }
-        public Loot(Item item, Decimal _LootChance)
+        public Loot(Item item, int _LootChance)
         {
             this.SpriteID = item.SpriteID;
+            this.RealID = item.RealID;
             LootChance = _LootChance;
         }
 

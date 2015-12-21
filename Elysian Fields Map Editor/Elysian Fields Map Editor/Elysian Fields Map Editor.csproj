@@ -46,6 +46,7 @@
     <Compile Include="Modules\Controls\Controls.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SimpleObject.cs" />
     <Compile Include="SpriteObject.cs" />
     <Compile Include="Modules\Controls\Textbox.cs" />
     <Compile Include="Tile.cs" />
@@ -191,6 +192,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\Graphics\WoodenFloor.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\Graphics\dinosaur.xnb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -43,6 +43,21 @@
     </ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="Content\Graphics\BlackDot.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\Graphics\dinosaur.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\Graphics\Spell_DinosaurFire.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\Graphics\HealthBarBackground.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Content\Graphics\HealthBarFilled.xnb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="Modules\AI\AI - Backup" />
     <None Include="Modules\AI\AI - Most recent backup" />
     <Compile Include="Modules\AI\AI.cs" />
@@ -73,6 +88,7 @@
     <Compile Include="Spell.cs" />
     <Compile Include="SpriteObject.cs" />
     <Compile Include="Modules\Entities\Tile.cs" />
+    <Compile Include="Storage.cs" />
     <Compile Include="UI.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>

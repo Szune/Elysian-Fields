@@ -40,7 +40,8 @@ namespace Elysian_Fields
         public int ParentItemID = -1;
         public bool isEmpty = true;
         public int BagSlot = -1;
-        public int Z_order = 0; // TODO: Add Z-order
+        public int Z_order = 0;
+        public int RealID = 0;
 
         public Item()
         {
@@ -48,8 +49,9 @@ namespace Elysian_Fields
             Strength = 0;
             Defense = 0;
         }
-        public Item(string name, string wearslot, Coordinates pos, int spriteid, int id = 0, int strength = 0, int defense = 0, bool visible = true, int wearingplayerid = 0)
+        public Item(string name, int realid, string wearslot, Coordinates pos, int spriteid, int id = 0, int strength = 0, int defense = 0, bool visible = true, int wearingplayerid = 0, int zorder = 0)
         {
+            RealID = realid;
             Name = name;
             ID = id;
             Position = pos;
@@ -66,6 +68,7 @@ namespace Elysian_Fields
                 Container.ID = this.ID;
                 Container.ItemID = spriteid;
             }
+            Z_order = zorder;
             Parent = new Backpack();
         }
     }

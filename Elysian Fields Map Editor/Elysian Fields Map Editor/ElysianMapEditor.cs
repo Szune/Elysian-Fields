@@ -42,6 +42,9 @@ namespace Elysian_Fields_Map_Editor
         private bool RightClicked = false;
         private bool LeftClicked = false;
         List<Tile> Tiles = new List<Tile>();
+        List<SimpleObject> Creatures = new List<SimpleObject>();
+        List<SimpleObject> Items = new List<SimpleObject>();
+
         private int currentZ = 0;
         private int currentZ_order = 0;
 
@@ -143,19 +146,19 @@ namespace Elysian_Fields_Map_Editor
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fistspell_animation"), 6, Entity.UnknownEntity, "Spell_FistSpell"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\healspell_ui"), 7, Entity.UnknownEntity, "UI_HealSpell"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\healspell_animation"), 8, Entity.UnknownEntity, "Spell_HealSpell"));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\goldenarmor"), 9, Entity.ItemEntity, "Golden Armor"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\goldenarmor"), 9, Entity.ItemEntity, "Golden Armor", null, 2));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\helmet"), 10, Entity.UnknownEntity, "helm"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\torso"), 11, Entity.UnknownEntity, "arm"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fist"), 12, Entity.UnknownEntity, "lhand"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\fist"), 13, Entity.UnknownEntity, "rhand"));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\hornedhelmet"), 14, Entity.ItemEntity, "Horned Helmet"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\hornedhelmet"), 14, Entity.ItemEntity, "Horned Helmet", null, 3));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\UI_background"), 15, Entity.UnknownEntity, "UI_background"));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\magicsword"), 16, Entity.ItemEntity, "Magic Sword"));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\ghost"), 17, Entity.CreatureEntity, "Ghost"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\magicsword"), 16, Entity.ItemEntity, "Magic Sword", null, 1));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\ghost"), 17, Entity.CreatureEntity, "Ghost", null, 1));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\legs"), 18, Entity.UnknownEntity, "legs"));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\masterlegs"), 19, Entity.ItemEntity, "Master Legs"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\masterlegs"), 19, Entity.ItemEntity, "Master Legs", null, 4));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\ui_bag"), 20, Entity.UnknownEntity, "bagslot"));
-            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\backpack"), 21, Entity.ItemEntity, "Backpack"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\backpack"), 21, Entity.ItemEntity, "Backpack", null, 5));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\backpackbackgrund"), 22, Entity.UnknownEntity, "UI_BackpackBackground"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\CloseButton"), 23, Entity.UnknownEntity, "UI_CloseButton"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\UpArrow"), 24, Entity.UnknownEntity, "UI_UpArrow"));
@@ -167,6 +170,7 @@ namespace Elysian_Fields_Map_Editor
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\WoodenStairsDown"), 30, Entity.TileEntity, "WStairsDown"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\WoodenStairsUp"), 31, Entity.TileEntity, "WStairsUp"));
             spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\WoodenFloor"), 32, Entity.TileEntity, "WFloor"));
+            spriteList.Add(new SpriteObject(Content.Load<Texture2D>("Graphics\\dinosaur"), 33, Entity.CreatureEntity, "Dinosaur", null, 3));
 
             LoadMap("Content\\fields.map");
 
@@ -190,13 +194,45 @@ namespace Elysian_Fields_Map_Editor
             for(int i = 0; i < Tiles.Count; i++)
             {
                 if (i == 0)
-                    saveString = Tiles[i].Position.X + "|" + Tiles[i].Position.Y + "|" + Tiles[i].Position.Z + "|" + Tiles[i].SpriteID + "|" + Tiles[i].Z_order; // TODO: Change 0 to z-order on map
+                    saveString = Tiles[i].Position.X + "|" + Tiles[i].Position.Y + "|" + Tiles[i].Position.Z + "|" + Tiles[i].SpriteID + "|" + Tiles[i].Z_order;
                 else
-                    saveString += "," + Tiles[i].Position.X + "|" + Tiles[i].Position.Y + "|" + Tiles[i].Position.Z + "|" + Tiles[i].SpriteID + "|" + Tiles[i].Z_order; // TODO: Change 0 to z-order on map
+                    saveString += "," + Tiles[i].Position.X + "|" + Tiles[i].Position.Y + "|" + Tiles[i].Position.Z + "|" + Tiles[i].SpriteID + "|" + Tiles[i].Z_order;
             }
 
             StreamWriter writer = new StreamWriter("Content\\fields.map");
             writer.WriteLine(saveString);
+
+            saveString = "";
+
+            for(int i = 0; i < Creatures.Count; i++)
+            {
+                if (i == 0)
+                {
+                    saveString = Creatures[i].Position.X + "|" + Creatures[i].Position.Y + "|" + Creatures[i].Position.Z + "|" + Creatures[i].RealID;
+                }
+                else
+                {
+                    saveString += "," + Creatures[i].Position.X + "|" + Creatures[i].Position.Y + "|" + Creatures[i].Position.Z + "|" + Creatures[i].RealID;
+                }
+            }
+            writer.WriteLine(saveString);
+
+            saveString = "";
+
+            for(int i = 0; i < Items.Count; i++)
+            {
+                if (i == 0)
+                {
+                    saveString = Items[i].Position.X + "|" + Items[i].Position.Y + "|" + Items[i].Position.Z + "|" + Items[i].RealID + "|" + Items[i].Z_order;
+                }
+                else
+                {
+                    saveString += "," + Items[i].Position.X + "|" + Items[i].Position.Y + "|" + Items[i].Position.Z + "|" + Items[i].RealID + "|" + Items[i].Z_order;
+                }
+            }
+
+            writer.WriteLine(saveString);
+
             writer.Close();
 
             Window.Title = saveString;
@@ -235,7 +271,18 @@ namespace Elysian_Fields_Map_Editor
             }
             else if (currentSprite.ID == 60000)
             {
-                currentAction = "Removing tiles";
+                if (currentTileset == Tileset_Tiles)
+                {
+                    currentAction = "Removing tiles";
+                }
+                else if(currentTileset == Tileset_Creatures)
+                {
+                    currentAction = "Removing creatures";
+                }
+                else if(currentTileset == Tileset_Items)
+                {
+                    currentAction = "Removing items";
+                }
             }
             else if (currentSprite.ID == 50000)
             {
@@ -475,34 +522,87 @@ namespace Elysian_Fields_Map_Editor
                     int newy = CurrentPosition.Y + (y / 32) - 8;
                     //Window.Title = "Total number of tiles: " + Tiles.Count + " Coordinates of last touched tile: " + newx + ", " + newy;
                     lastTouchedPosition = new Coordinates(newx, newy, currentZ);
-                    if (currentSprite.ID != -1 && GetTileByMousePosition(x, y).ID == -1 && currentSprite.ID < 49000 && x < Coordinates.UI_Step * 26)
+                    if (currentSprite.EntityType == Entity.TileEntity)
                     {
-                        if (GetSpriteByID(currentSprite.ID).Height == 64 && GetSpriteByID(currentSprite.ID).Width != 64)
+                        if (currentSprite.ID != -1 && GetTileByMousePosition(x, y).ID == -1 && currentSprite.ID < 49000 && x < Coordinates.UI_Step * 26)
                         {
-                            Tiles.Add(new Tile("grass", currentSprite.ID, new Coordinates(newx, newy, z), new Coordinates(newx, newy - 1, z), Tiles.Count, true, false, currentZ_order));
-                        }
-                        else if (GetSpriteByID(currentSprite.ID).Width == 64 && GetSpriteByID(currentSprite.ID).Height != 64)
-                        {
-                            Tiles.Add(new Tile("grass", currentSprite.ID, new Coordinates(newx, newy, z), new Coordinates(newx - 1, newy, z), Tiles.Count, true, false, currentZ_order));
-                        }
-                        else if (GetSpriteByID(currentSprite.ID).Width == 64 && GetSpriteByID(currentSprite.ID).Height == 64)
-                        {
-                            Tiles.Add(new Tile("grass", currentSprite.ID, new Coordinates(newx, newy, z), new Coordinates(newx - 1, newy - 1, z), Tiles.Count, true, false, currentZ_order));
-                        }
-                        else
-                        {
-                            Tiles.Add(new Tile("grass", currentSprite.ID, new Coordinates(newx, newy, z), new Coordinates(newx, newy, z), Tiles.Count, true, false, currentZ_order));
+                            if (GetSpriteByID(currentSprite.ID).Height == 64 && GetSpriteByID(currentSprite.ID).Width != 64)
+                            {
+                                Tiles.Add(new Tile("grass", currentSprite.ID, new Coordinates(newx, newy, z), new Coordinates(newx, newy - 1, z), Tiles.Count, true, false, currentZ_order));
+                            }
+                            else if (GetSpriteByID(currentSprite.ID).Width == 64 && GetSpriteByID(currentSprite.ID).Height != 64)
+                            {
+                                Tiles.Add(new Tile("grass", currentSprite.ID, new Coordinates(newx, newy, z), new Coordinates(newx - 1, newy, z), Tiles.Count, true, false, currentZ_order));
+                            }
+                            else if (GetSpriteByID(currentSprite.ID).Width == 64 && GetSpriteByID(currentSprite.ID).Height == 64)
+                            {
+                                Tiles.Add(new Tile("grass", currentSprite.ID, new Coordinates(newx, newy, z), new Coordinates(newx - 1, newy - 1, z), Tiles.Count, true, false, currentZ_order));
+                            }
+                            else
+                            {
+                                Tiles.Add(new Tile("grass", currentSprite.ID, new Coordinates(newx, newy, z), new Coordinates(newx, newy, z), Tiles.Count, true, false, currentZ_order));
+                            }
                         }
                     }
-                    else if (currentSprite.ID == 60000)
+                    else if(currentSprite.EntityType == Entity.CreatureEntity)
                     {
-                        int tmpint = GetTileIndexByMousePosition(x, y);
-                        if (tmpint > -1)
+                        Texture2D sprite = GetSpriteByID(currentSprite.ID);
+                        if (GetCreatureByMousePosition(x, y).SpriteID == -1)
                         {
-                            if (LastRemovedTime + 500 < gameTime.TotalGameTime.TotalMilliseconds)
+                            //if (sprite.Height == 32 && sprite.Width == 32)
+                            //{
+                                Creatures.Add(new SimpleObject(currentSprite.ID, new Coordinates(newx, newy, z), currentSprite.RealID));
+                            //}
+                            /*if (sprite.Height == 64 && sprite.Width == 64)
                             {
-                                Tiles.Remove(GetTopItemFromTile(new Coordinates(newx, newy, z)));
-                                LastRemovedTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                                Creatures.Add(new SimpleObject(currentSprite.ID, new Coordinates(newx - 1, newy - 1, z), currentSprite.RealID));
+                            }*/
+                        }
+                    }
+                    else if(currentSprite.EntityType == Entity.ItemEntity)
+                    {
+                        if (GetItemByMousePosition(x, y).SpriteID == -1)
+                        {
+                            Items.Add(new SimpleObject(currentSprite.ID, new Coordinates(newx, newy, z), currentSprite.RealID, currentZ_order));
+                        }
+                    }
+
+                    if (currentSprite.ID == 60000)
+                    {
+                        if (currentTileset == Tileset_Tiles)
+                        {
+                            int tmpint = GetTileIndexByMousePosition(x, y);
+                            if (tmpint > -1)
+                            {
+                                if (LastRemovedTime + 250 < gameTime.TotalGameTime.TotalMilliseconds)
+                                {
+                                    Tiles.Remove(GetTopItemFromTile(new Coordinates(newx, newy, z)));
+                                    LastRemovedTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                                }
+                            }
+                        }
+                        else if(currentTileset == Tileset_Creatures)
+                        {
+                            int tmpint = GetCreatureIndexByMousePosition(x, y);
+                            if (tmpint > -1)
+                            {
+                                if (LastRemovedTime + 250 < gameTime.TotalGameTime.TotalMilliseconds)
+                                {
+                                    Creatures.RemoveAt(tmpint);
+                                    LastRemovedTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                                }
+                            }
+                        }
+                        else if (currentTileset == Tileset_Items)
+                        {
+                            int tmpint = GetItemIndexByMousePosition(x, y);
+                            if (tmpint > -1)
+                            {
+                                if (LastRemovedTime + 250 < gameTime.TotalGameTime.TotalMilliseconds)
+                                {
+                                    Items.Remove(GetTopNotTileItemFromTile(new Coordinates(newx, newy, z)));
+                                    LastRemovedTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+                                }
                             }
                         }
                     }
@@ -679,6 +779,35 @@ namespace Elysian_Fields_Map_Editor
                     }
                 }
 
+                if (!read.EndOfStream)
+                {
+                    string[] creatureCoordinates = read.ReadLine().Split(",".ToCharArray());
+
+                    for (int i = 0; i < creatureCoordinates.Length; i++)
+                    {
+                        string[] parameters = creatureCoordinates[i].Split("|".ToCharArray());
+                        Creatures.Add(new SimpleObject(GetSpriteObjectByRealID(int.Parse(parameters[3]), Entity.CreatureEntity).ID, new Coordinates(int.Parse(parameters[0]), int.Parse(parameters[1]), int.Parse(parameters[2])), int.Parse(parameters[3])));
+                    }
+                }
+
+                if (!read.EndOfStream)
+                {
+                    string[] itemCoordinates = read.ReadLine().Split(",".ToCharArray());
+
+                    for (int i = 0; i < itemCoordinates.Length; i++)
+                    {
+                        string[] parameters = itemCoordinates[i].Split("|".ToCharArray());
+                        try
+                        {
+                            Items.Add(new SimpleObject(GetSpriteObjectByRealID(int.Parse(parameters[3]), Entity.ItemEntity).ID, new Coordinates(int.Parse(parameters[0]), int.Parse(parameters[1]), int.Parse(parameters[2])), int.Parse(parameters[3]), int.Parse(parameters[4])));
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+                }
+
                 /*
                     TODO: Change Players[0] to a variable ID to allow for multiplayer
                 */
@@ -739,7 +868,39 @@ namespace Elysian_Fields_Map_Editor
                     for (int i = 0; i < Tiles.Count; i++)
                     {
                         if (Tiles[i].Position.Z == z && Tiles[i].Z_order == p)
-                            spriteBatch.Draw(GetSpriteByID(Tiles[i].SpriteID), new Vector2((float)(Tiles[i].drawPosition.X - CurrentPosition.X + 12) * (Coordinates.Screen_Step), (float)(Tiles[i].drawPosition.Y - CurrentPosition.Y + 8) * (Coordinates.Screen_Step)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                        {
+                            if (z != currentZ)
+                            {
+                                spriteBatch.Draw(GetSpriteByID(Tiles[i].SpriteID), new Vector2((float)(Tiles[i].drawPosition.X - CurrentPosition.X + 12) * (Coordinates.Screen_Step), (float)(Tiles[i].drawPosition.Y - CurrentPosition.Y + 8) * (Coordinates.Screen_Step)), null, Color.Gray, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                            }
+                            else
+                            {
+                                spriteBatch.Draw(GetSpriteByID(Tiles[i].SpriteID), new Vector2((float)(Tiles[i].drawPosition.X - CurrentPosition.X + 12) * (Coordinates.Screen_Step), (float)(Tiles[i].drawPosition.Y - CurrentPosition.Y + 8) * (Coordinates.Screen_Step)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                            }
+                        }
+                    }
+                }
+                for (int i = 0; i < Creatures.Count; i++)
+                {
+                    if (Creatures[i].Position.Z == z)
+                    {
+                        Texture2D sprite = GetSpriteByID(Creatures[i].SpriteID);
+                        if (sprite.Width == 32 && sprite.Height == 32)
+                        {
+                            spriteBatch.Draw(sprite, new Vector2((float)(Creatures[i].Position.X - CurrentPosition.X + 12) * (Coordinates.Screen_Step), (float)(Creatures[i].Position.Y - CurrentPosition.Y + 8) * (Coordinates.Screen_Step)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                        }
+                        if (sprite.Width == 64 && sprite.Height == 64)
+                        {
+                            spriteBatch.Draw(sprite, new Vector2((float)(Creatures[i].Position.X - 1 - CurrentPosition.X + 12) * (Coordinates.Screen_Step), (float)(Creatures[i].Position.Y - 1 - CurrentPosition.Y + 8) * (Coordinates.Screen_Step)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                        }
+                    }
+                }
+                for (int i = 0; i < Items.Count; i++)
+                {
+                    if (Items[i].Position.Z == z)
+                    {
+                        Texture2D sprite = GetSpriteByID(Items[i].SpriteID);
+                        spriteBatch.Draw(sprite, new Vector2((float)(Items[i].Position.X - CurrentPosition.X + 12) * (Coordinates.Screen_Step), (float)(Items[i].Position.Y - CurrentPosition.Y + 8) * (Coordinates.Screen_Step)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
@@ -922,6 +1083,19 @@ namespace Elysian_Fields_Map_Editor
             return spriteList[0];
         }
 
+        private SpriteObject GetSpriteObjectByRealID(int realID, int entitytype)
+        {
+            for (int i = 0; i < spriteList.Count; i++)
+            {
+                if (spriteList[i].RealID == realID && spriteList[i].EntityType == entitytype)
+                {
+                    return spriteList[i];
+                }
+
+            }
+            return spriteList[0];
+        }
+
         private Tile GetTileByMousePosition(int x, int y)
         {
             /*Rectangle tmpRect;
@@ -942,6 +1116,35 @@ namespace Elysian_Fields_Map_Editor
             }
             return new Tile("null");
         }
+        private SimpleObject GetCreatureByMousePosition(int x, int y)
+        {
+            int newX = CurrentPosition.X + (x / 32) - 12;
+            int newY = CurrentPosition.Y + (y / 32) - 8;
+
+            for (int i = 0; i < Creatures.Count; i++)
+            {
+                if (SamePosition(Creatures[i].Position, new Coordinates(newX, newY, currentZ)))
+                {
+                    return Creatures[i];
+                }
+            }
+            return new SimpleObject();
+        }
+
+        private SimpleObject GetItemByMousePosition(int x, int y)
+        {
+            int newX = CurrentPosition.X + (x / 32) - 12;
+            int newY = CurrentPosition.Y + (y / 32) - 8;
+
+            for (int i = 0; i < Items.Count; i++)
+            {
+                if (SamePosition(Items[i].Position, new Coordinates(newX, newY, currentZ)) && Items[i].Z_order == currentZ_order)
+                {
+                    return Items[i];
+                }
+            }
+            return new SimpleObject();
+        }
 
         private int GetTileIndexByMousePosition(int x, int y)
         {
@@ -954,6 +1157,36 @@ namespace Elysian_Fields_Map_Editor
             for (int i = 0; i < Tiles.Count; i++)
             {
                 if (SamePosition(Tiles[i].Position, new Coordinates(newX, newY, currentZ)))
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private int GetCreatureIndexByMousePosition(int x, int y)
+        {
+
+            int newX = CurrentPosition.X + (x / 32) - 12;
+            int newY = CurrentPosition.Y + (y / 32) - 8;
+            for (int i = 0; i < Creatures.Count; i++)
+            {
+                if (SamePosition(Creatures[i].Position, new Coordinates(newX, newY, currentZ)))
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private int GetItemIndexByMousePosition(int x, int y)
+        {
+
+            int newX = CurrentPosition.X + (x / 32) - 12;
+            int newY = CurrentPosition.Y + (y / 32) - 8;
+            for (int i = 0; i < Items.Count; i++)
+            {
+                if (SamePosition(Items[i].Position, new Coordinates(newX, newY, currentZ)))
                 {
                     return i;
                 }
@@ -977,6 +1210,24 @@ namespace Elysian_Fields_Map_Editor
                 return TileItems[TileItems.Count - 1];
             }
             return new Tile("null");
+        }
+
+        private SimpleObject GetTopNotTileItemFromTile(Coordinates Tile)
+        {
+            List<SimpleObject> TileItems = new List<SimpleObject>();
+            for (int i = 0; i < Items.Count; i++)
+            {
+                if (SamePosition(Items[i].Position, Tile))
+                {
+                    TileItems.Add(Items[i]);
+                }
+            }
+            if (TileItems.Count > 0)
+            {
+                TileItems.Sort((a, b) => a.Z_order.CompareTo(b.Z_order));
+                return Items[Items.Count - 1];
+            }
+            return new SimpleObject();
         }
 
         private bool SamePosition(Coordinates Source, Coordinates Destination, bool CheckZ = true)

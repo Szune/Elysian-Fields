@@ -33,6 +33,7 @@ namespace Elysian_Fields_Map_Editor
         public Texture2D Sprite;
         public int ID;
         public int EntityType;
+        public int RealID;
         public string Name;
         public Coordinates Position { get; set; }
 
@@ -44,13 +45,14 @@ namespace Elysian_Fields_Map_Editor
         {
             ID = -1;
         }
-        public SpriteObject(Texture2D sprite, int id, int entitytype, string name, Coordinates ButtonPosition = null)
+        public SpriteObject(Texture2D sprite, int id, int entitytype, string name, Coordinates ButtonPosition = null, int realid = 0)
         {
             Sprite = sprite;
             ID = id;
             EntityType = entitytype;
             Position = ButtonPosition;
             Name = name;
+            RealID = realid;
         }
     }
 }

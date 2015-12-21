@@ -36,9 +36,15 @@ namespace Elysian_Fields
         public static int MaxX = 1024;
         public static int MaxY = 1024;
 
+        public static int GameX = 8;
+        public static int GameY = 6;
+
+        public static int ScreenX = 7;
+        public static int ScreenY = 5;
+
         public static int MaxZ_Order = 15;
 
-        public static Coordinates CenterCoordinates = new Coordinates(Coordinates.Step * 12, Coordinates.Step * 8); // X: 12 Y: 8
+        public static Coordinates CenterCoordinates = new Coordinates(Coordinates.Step * ScreenX, Coordinates.Step * ScreenY); // X: 8 Y: 6
 
         public static int ExperienceNeededForLevel(double level)
         {

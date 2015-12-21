@@ -35,12 +35,18 @@ namespace Elysian_Fields
         public int StartTime;
         public const int Steps = 30;
         public const int DamageDuration = 1000;
-        
+
+        public const int Text_Damage = 1;
+        public const int Text_Healing = 2;
+        public const int Text_Experience = 3;
+
         public int StepDuration { get { return DamageDuration / Steps; } set { } }
 
         public int CurrentStep = 0;
 
-        public bool Healing;
+        public int Text_Type = 0;
+
+        //public bool Healing;
 
         //public int OffsetX
 
@@ -57,7 +63,7 @@ namespace Elysian_Fields
             ID = -1;
         }
 
-        public DamageObject(Creature monster, int Damage, bool healing, int _StartTime, int _EndTime, int id = 0, Coordinates pos = null)
+        public DamageObject(Creature monster, int Damage, int _text_type, int _StartTime, int _EndTime, int id = 0, Coordinates pos = null)
         {
             creature = monster;
             damageDealt = Damage;
@@ -65,7 +71,7 @@ namespace Elysian_Fields
             EndTime = _EndTime;
             StartTime = _StartTime;
             Position = pos;
-            Healing = healing;
+            Text_Type = _text_type;
         }
 
         public double OffsetY(int CurrentTime)

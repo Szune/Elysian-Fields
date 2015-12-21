@@ -44,6 +44,7 @@ namespace Elysian_Fields
         internal List<Creature> CreatureList = new List<Creature>();
         internal List<NPC> NPCs = new List<NPC>();
         internal List<Tile> DebugTiles_Pathfinding = new List<Tile>();
+        internal List<Spell> Spells = new List<Spell>();
         private Random Generator = new Random();
         internal Task PathfindingTask;
         //private  PathfindingTask;
@@ -64,12 +65,15 @@ namespace Elysian_Fields
 
         internal void GeneratePathFromCreature(Creature FromCreature, Coordinates Target, int DistanceTo = 20)
         {
-            FromCreature.Destination = Target;
             FromCreature.ResetPath();
-            AI ai = new AI();
             PathfindingTask = Task.Factory.StartNew(() =>
-            {    
-                 FromCreature.Path = ai.Monster_PathTo(Target, FromCreature.Position, DistanceTo);
+            {
+                AI ai = new AI();
+                FromCreature.Path = ai.Monster_PathTo(Target, FromCreature.Position, DistanceTo);
+                if (FromCreature.Path.Count > 0)
+                {
+                    FromCreature.Destination = Coordinates.Parse(FromCreature.Path[0]);
+                }
             }
             );
 
@@ -94,11 +98,24 @@ namespace Elysian_Fields
         {
             DirectoryInfo GetDir = new DirectoryInfo("Content\\Scripts\\NPCs");
             FileInfo[] FilesInDir = GetDir.GetFiles();
-            for(int i = 0; i < FilesInDir.Length; i++)
+            for (int i = 0; i < FilesInDir.Length; i++)
             {
                 if (FilesInDir[i].Name != "funcs.lua")
                 {
                     NPCs.Add(new NPC(FilesInDir[i].FullName));
+                }
+            }
+        }
+
+        internal void LoadSpells()
+        {
+            DirectoryInfo GetDir = new DirectoryInfo("Content\\Scripts\\Spells");
+            FileInfo[] FilesInDir = GetDir.GetFiles();
+            for (int i = 0; i < FilesInDir.Length; i++)
+            {
+                if (FilesInDir[i].Name != "funcs.lua")
+                {
+                    Spells.Add(new Spell(FilesInDir[i].FullName));
                 }
             }
         }
@@ -111,19 +128,19 @@ namespace Elysian_Fields
                 if (Creatures[i].TargetID != -1)
                 {
                     Player player = GetPlayerByID(Creatures[i].TargetID);
-                    if (player.Health > 0 && DistanceToDiagonal(player.Position, Creatures[i].Position) > 1 && DistanceToDiagonal(player.Position, Creatures[i].Position) < 14)
+                    if (player.Health > 0 && DistanceToDiagonal(player.Position, Creatures[i].Position) > 1 && DistanceToDiagonal(player.Position, Creatures[i].Position) <= 8)
                     {
                         if (Creatures[i].Health > 0) // && !IsAdjacent(Creatures[i], GetCreatureByID(Creatures[i].TargetID)))
                         {
-                            if (!Creatures[i].hasPath() || (Creatures[i].hasPath() && !SamePosition(player.Position, Creatures[i].Destination)))
+                            //if (!Creatures[i].hasPath() || (Creatures[i].hasPath() && !SamePosition(player.Position, Creatures[i].Destination)))
+                            //{
+                            GeneratePathFromCreature(Creatures[i], player.Position, 8);
+                            /*Coordinates next = Creatures[i].NextStep();
+                            if (next != null)
                             {
-                                GeneratePathFromCreature(Creatures[i], player.Position, 14);
-                                Coordinates next = Creatures[i].NextStep();
-                                if (next != null)
-                                {
-                                    Creatures[i].Position = new Coordinates(next.X, next.Y, Creatures[i].Position.Z);
-                                }
-                            }
+                                Creatures[i].Position = new Coordinates(next.X, next.Y, Creatures[i].Position.Z);
+                            }*/
+                            //}
                         }
                     }
                 }
@@ -132,12 +149,21 @@ namespace Elysian_Fields
 
         internal void MovePlayer()
         {
-/* TODO: Add multiplayer functionality and change Players[0] to a variable */
+            /* TODO: Add multiplayer functionality and change Players[0] to a variable */
 
-                if (Players[0].Health > 0 && Players[0].hasPath())
-                {
-                    MoveCreature(Players[0], Players[0].NextStep());
-                }
+            if (Players[0].Health > 0 && Players[0].hasPath())
+            {
+                MoveCreature(Players[0], Players[0].NextStep());
+            }
+        }
+
+        internal bool Roll(int chancePercent)
+        {
+            if (chancePercent >= Generator.Next(1, 101))
+            {
+                return true;
+            }
+            return false;
         }
 
         internal int Monster_FindTarget(Creature monster)
@@ -149,17 +175,17 @@ namespace Elysian_Fields
             //rectangle.y = monstery - 9
             //rectangle.height = rectangle.y + 17
             Rectangle TargetArea;
-            TargetArea.X = monster.Position.X - 13;
-            TargetArea.Y = monster.Position.Y - 9;
-            TargetArea.Width = TargetArea.X + 25;
-            TargetArea.Height = TargetArea.Y + 17;
+            TargetArea.X = monster.Position.X - 7;
+            TargetArea.Y = monster.Position.Y - 5;
+            TargetArea.Width = TargetArea.X + 15;
+            TargetArea.Height = TargetArea.Y + 11;
             if (TargetArea.X < 0) { TargetArea.X = 0; TargetArea.Width += 1; }
             if (TargetArea.Y < 0) { TargetArea.Y = 0; TargetArea.Height += 1; }
 
             for (int i = 0; i < Players.Count; i++)
             {
                 //debug.WriteLine("TargetAreaX = " + TargetArea.X + " TargetAreaY = " + TargetArea.Y + "TargetAreaWidth = " + TargetArea.Width + " TargetAreaHeight = " + TargetArea.Height + " | PlayerX = " + Players[i].Position.X + " PlayerY = " + Players[i].Position.Y + " PlayerZ = " + Players[i].Position.Z + " | MonsterZ = " + monster.Position.Z);
-                if (DistanceToDiagonal(monster.Position, Players[i].Position) < 15)
+                if (DistanceToDiagonal(monster.Position, Players[i].Position) <= 8)
                 {
                     if (TargetArea.Contains(Players[i].Position.X, Players[i].Position.Y) && monster.Position.Z == Players[i].Position.Z)
                     {
@@ -243,9 +269,10 @@ namespace Elysian_Fields
             return -1;
         }
 
-        internal int PlayerAttack(Player player)
+        internal List<DamageObject> PlayerAttack(Player player, GameTime gameTime)
         {
-
+            List<DamageObject> DamagedMonsters = new List<DamageObject>();
+            int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
             if (player.TargetID != -1)
             {
                 Creature target = GetCreatureByID(player.TargetID);
@@ -255,34 +282,55 @@ namespace Elysian_Fields
                     if (CanAttack(player, target) && DistanceToDiagonal(player.Position, target.Position) < 2) // < 46 because when standing diagonal, the distance is 45, when standing directly in front, it is 32
                     {
                         int dmgDealt = target.ReceiveDamage(player.TotalStrength(), target.Defense);
+                        DamagedMonsters.Add(new DamageObject(target, dmgDealt, DamageObject.Text_Damage, currentTime, currentTime + DamageObject.DamageDuration));
                         if (target.Health < 1)
                         {
-                            CreatureDie(target, player);
+                            int experience = CreatureDie(target, player);
+                            DamagedMonsters.Add(new DamageObject(player, experience, DamageObject.Text_Experience, currentTime, currentTime + DamageObject.DamageDuration));
                         }
-                        return dmgDealt;
                     }
                 }
             }
-            return -1;
+            return DamagedMonsters;
         }
 
-        internal void CreatureDie(Creature creature, Player killer)
+        internal int CreatureDie(Creature creature, Player killer)
         {
             killer.ReceiveExperience(creature.Experience);
             if (creature.LootList.Count > 0)
             {
-                Random generator = new Random();
-                //generator.
-                for (int i = 0; i < 1; i++)
+                for (int i = 0; i < creature.LootList.Count; i++)
                 {
-                    //Decimal chance = (generator.Next(creature.LootList[i].LootChance * 100, 1 * 100));
-                    //chance = (Math.Round(chance / 10.0)) * 10;
-                    //if (chance >= 90)
-                        CreateWorldItemFromListItem(creature.LootList[i].SpriteID, creature.Position);
-                    //else
-                        //killer.Name = chance.ToString();
+                    if (Roll(creature.LootList[i].LootChance))
+                    {
+                        CreateWorldItemFromListItem(creature.LootList[i].RealID, creature.Position);
+                    }
                 }
             }
+            if (creature.ID == killer.TargetID)
+            {
+                killer.TargetID = -1;
+            }
+            return creature.Experience;
+        }
+
+        internal void PlayerDie(Creature killer, Player creature)
+        {
+            //killer.ReceiveExperience(creature.Experience);
+            //if (creature.LootList.Count > 0)
+            //{
+            //Random generator = new Random();
+            //generator.
+            /*for (int i = 0; i < 1; i++)
+            {
+                //Decimal chance = (generator.Next(creature.LootList[i].LootChance * 100, 1 * 100));
+                //chance = (Math.Round(chance / 10.0)) * 10;
+                //if (chance >= 90)
+                CreateWorldItemFromListItem(creature.LootList[i].SpriteID, creature.Position);
+                //else
+                //killer.Name = chance.ToString();
+            }
+        }*/
             if (creature.ID == killer.TargetID)
             {
                 killer.TargetID = -1;
@@ -293,36 +341,60 @@ namespace Elysian_Fields
         {
             List<DamageObject> DamagedMonsters = new List<DamageObject>();
             int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
-            if (!spell.TargetSpell)
+            if (spell.AreaSpell)
             {
-                for (int i = 0; i < spell.Area.Length / 3; i++)
+                Coordinates TopLeftOfScreen = new Coordinates(player.Position.X - 7, player.Position.Y - 5);
+                /* TODO: Make area spell healing possible! */
+                int n = 1;
+                int y = 0;
+                int x = 0;
+                int experience = 0;
+                for (int i = 0; i < spell.Area.Length; i++)
                 {
-                    for (int j = 0; j < spell.Area.Length / 3; j++)
+                    if (n % 15 == 0)
                     {
-                        if (spell.Area[i + j])
+                        y++;
+                        x = -1;
+                    }
+                    if (spell.Area[i] == 1)
+                    {
+                        //spriteBatch.Draw(spell.Sprite, new Vector2((float)(SpellDamage[index].Position.X - map.Players[0].Position.X + (Utility.ScreenX) - 7 + x) * Coordinates.Step, (float)(SpellDamage[index].Position.Y - map.Players[0].Position.Y + (Utility.ScreenY) - 5 + y) * Coordinates.Step), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                        List<Creature> CastOnCreatures = GetCreaturesFromTile(new Coordinates(TopLeftOfScreen.X + x, TopLeftOfScreen.Y + y, player.Position.Z));
+                        for (int c = 0; c < CastOnCreatures.Count; c++)
                         {
-                            /* TODO: Make area spell healing possible! */
-                            int creatureID = GetCreatureIDFromTile(new Coordinates(player.Position.X - 1 + (i), player.Position.Y - 1 + (j)));
-                            if (creatureID != -1)
+
+                            Creature creature = CastOnCreatures[c];
+                            if (creature.Health > 0)
                             {
-                                Creature creature = GetCreatureByID(creatureID);
-                                if (creature.Health > 0)
+                                int DamageDealt = creature.ReceiveDamage(spell.Damage + (player.MagicStrength * 2), 0);
+                                int text_type = 0;
+                                if (spell.HealSpell)
                                 {
-                                    int DamageDealt = creature.ReceiveDamage(spell.Damage + (player.MagicStrength * 2), 0);
-                                    DamagedMonsters.Add(new DamageObject(creature, DamageDealt, spell.HealSpell, currentTime, currentTime + DamageObject.DamageDuration));
-                                    if (creature.Health < 1)
-                                    {
-                                        CreatureDie(creature, player);
-                                    }
+                                    text_type = DamageObject.Text_Healing;
+                                }
+                                else
+                                {
+                                    text_type = DamageObject.Text_Damage;
+                                }
+                                DamagedMonsters.Add(new DamageObject(creature, DamageDealt, text_type, currentTime, currentTime + DamageObject.DamageDuration));
+                                if (creature.Health < 1)
+                                {
+                                    experience += CreatureDie(creature, player);
                                 }
                             }
                         }
                     }
+                    n++;
+                    x++;
+                }
+                if (experience > 0)
+                {
+                    DamagedMonsters.Add(new DamageObject(player, experience, DamageObject.Text_Experience, currentTime, currentTime + DamageObject.DamageDuration));
                 }
             }
             else
             {
-                if(spell.HealSpell)
+                if (spell.HealSpell)
                 {
                     int damage = spell.Damage + (player.MagicStrength * 2);
                     if (player.Health + damage > player.MaxHealth)
@@ -334,20 +406,137 @@ namespace Elysian_Fields
                     {
                         player.Health += damage;
                     }
-                    DamagedMonsters.Add(new DamageObject(player, damage, spell.HealSpell, currentTime, currentTime + DamageObject.DamageDuration));
+                    int text_type = 0;
+                    if (spell.HealSpell)
+                    {
+                        text_type = DamageObject.Text_Healing;
+                    }
+                    else
+                    {
+                        text_type = DamageObject.Text_Damage;
+                    }
+                    DamagedMonsters.Add(new DamageObject(player, damage, text_type, currentTime, currentTime + DamageObject.DamageDuration));
                 }
                 else
                 {
                     int DamageDealt = target.ReceiveDamage(spell.Damage + (player.MagicStrength * 2), 0);
-                    DamagedMonsters.Add(new DamageObject(target, DamageDealt, spell.HealSpell, currentTime, currentTime + DamageObject.DamageDuration));
+                    int text_type = 0;
+                    if (spell.HealSpell)
+                    {
+                        text_type = DamageObject.Text_Healing;
+                    }
+                    else
+                    {
+                        text_type = DamageObject.Text_Damage;
+                    }
+                    DamagedMonsters.Add(new DamageObject(target, DamageDealt, text_type, currentTime, currentTime + DamageObject.DamageDuration));
                     if (target.Health < 1)
                     {
-                        CreatureDie(target, player);
+                        int experience = CreatureDie(target, player);
+                        DamagedMonsters.Add(new DamageObject(player, experience, DamageObject.Text_Experience, currentTime, currentTime + DamageObject.DamageDuration));
                     }
                 }
             }
 
             return DamagedMonsters;
+        }
+
+        internal List<DamageObject> CreatureCastSpell(Player target, Spell spell, Creature creature, GameTime gameTime)
+        {
+            List<DamageObject> DamagedPlayers = new List<DamageObject>();
+            int currentTime = (int)gameTime.TotalGameTime.TotalMilliseconds;
+            if (spell.AreaSpell)
+            {
+                Coordinates TopLeftOfScreen = new Coordinates(creature.Position.X - 7, creature.Position.Y - 5);
+                /* TODO: Make area spell healing possible! */
+                int n = 1;
+                int y = 0;
+                int x = 0;
+                for (int i = 0; i < spell.Area.Length; i++)
+                {
+                    if (n % 15 == 0)
+                    {
+                        y++;
+                        x = -1;
+                    }
+                    if (spell.Area[i] == 1)
+                    {
+                        //spriteBatch.Draw(spell.Sprite, new Vector2((float)(SpellDamage[index].Position.X - map.Players[0].Position.X + (Utility.ScreenX) - 7 + x) * Coordinates.Step, (float)(SpellDamage[index].Position.Y - map.Players[0].Position.Y + (Utility.ScreenY) - 5 + y) * Coordinates.Step), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+                        List<Player> CastOnPlayers = GetPlayersFromTile(new Coordinates(TopLeftOfScreen.X + x, TopLeftOfScreen.Y + y, creature.Position.Z));
+                        for (int c = 0; c < CastOnPlayers.Count; c++)
+                        {
+
+                            Player player = CastOnPlayers[c];
+                            if (player.Health > 0)
+                            {
+                                int DamageDealt = player.ReceiveDamage(spell.Damage + (creature.MagicStrength * 2), 0);
+                                int text_type = 0;
+                                if (spell.HealSpell)
+                                {
+                                    text_type = DamageObject.Text_Healing;
+                                }
+                                else
+                                {
+                                    text_type = DamageObject.Text_Damage;
+                                }
+                                DamagedPlayers.Add(new DamageObject(player, DamageDealt, text_type, currentTime, currentTime + DamageObject.DamageDuration));
+                                if (player.Health < 1)
+                                {
+                                    PlayerDie(creature, player);
+                                }
+                            }
+                        }
+                    }
+                    n++;
+                    x++;
+                }
+            }
+            else
+            {
+                if (spell.HealSpell)
+                {
+                    int damage = spell.Damage + (creature.MagicStrength * 2);
+                    if (creature.Health + damage > creature.MaxHealth)
+                    {
+                        damage = creature.MaxHealth - creature.Health;
+                        creature.Health = creature.MaxHealth;
+                    }
+                    else
+                    {
+                        creature.Health += damage;
+                    }
+                    int text_type = 0;
+                    if (spell.HealSpell)
+                    {
+                        text_type = DamageObject.Text_Healing;
+                    }
+                    else
+                    {
+                        text_type = DamageObject.Text_Damage;
+                    }
+                    DamagedPlayers.Add(new DamageObject(creature, damage, text_type, currentTime, currentTime + DamageObject.DamageDuration));
+                }
+                else
+                {
+                    int DamageDealt = target.ReceiveDamage(spell.Damage + (creature.MagicStrength * 2), 0);
+                    int text_type = 0;
+                    if (spell.HealSpell)
+                    {
+                        text_type = DamageObject.Text_Healing;
+                    }
+                    else
+                    {
+                        text_type = DamageObject.Text_Damage;
+                    }
+                    DamagedPlayers.Add(new DamageObject(target, DamageDealt, text_type, currentTime, currentTime + DamageObject.DamageDuration));
+                    if (target.Health < 1)
+                    {
+                        PlayerDie(creature, target);
+                    }
+                }
+            }
+
+            return DamagedPlayers;
         }
 
 
@@ -423,7 +612,7 @@ namespace Elysian_Fields
                 }
             }
 
-            if(TileID == -1)
+            if (TileID == -1)
             {
                 return new Tile("null");
             }
@@ -475,9 +664,9 @@ namespace Elysian_Fields
         internal Item GetTopItemFromTile(Coordinates Tile)
         {
             List<Item> TileItems = new List<Item>();
-            for(int i = 0; i < WorldItems.Count; i++)
+            for (int i = 0; i < WorldItems.Count; i++)
             {
-                if(SamePosition(WorldItems[i].Position, Tile))
+                if (SamePosition(WorldItems[i].Position, Tile))
                 {
                     TileItems.Add(WorldItems[i]);
                 }
@@ -531,6 +720,30 @@ namespace Elysian_Fields
             }
         }
 
+        internal Spell GetSpellByName(string name)
+        {
+            for (int i = 0; i < Spells.Count; i++)
+            {
+                if (Spells[i].Name == name)
+                {
+                    return Spells[i];
+                }
+            }
+            return new Spell();
+        }
+
+        internal Spell GetSpellByID(int id)
+        {
+            for (int i = 0; i < Spells.Count; i++)
+            {
+                if (Spells[i].ID == id)
+                {
+                    return Spells[i];
+                }
+            }
+            return new Spell();
+        }
+
         internal void UnequipItem(Item item, UI equipment, Coordinates target)
         {
             if (IsTileThrowable(target))
@@ -570,7 +783,7 @@ namespace Elysian_Fields
             }
             else
             {
-                if(SourceEquipment != null)
+                if (SourceEquipment != null)
                 {
                     item.Slot = null;
                     item.WearingPlayerID = Players[0].ID;
@@ -606,7 +819,7 @@ namespace Elysian_Fields
             }
         }
 
-        internal Item CreateWorldItemFromListItem(int ID, Coordinates pos = null)
+        internal Item CreateWorldItemFromListItem(int ID, Coordinates pos = null, int zorder = 0)
         {
             Item newItem;
             if (pos == null) { pos = new Coordinates(0, 0); }
@@ -614,7 +827,7 @@ namespace Elysian_Fields
             {
                 if (ItemList[i].ID == ID)
                 {
-                    newItem = new Item(ItemList[i].Name, ItemList[i].WearSlot, pos, ItemList[i].SpriteID, WorldItems.Count + 1, ItemList[i].Strength, ItemList[i].Defense, ItemList[i].Visible);
+                    newItem = new Item(ItemList[i].Name, ItemList[i].RealID, ItemList[i].WearSlot, pos, ItemList[i].SpriteID, WorldItems.Count + 1, ItemList[i].Strength, ItemList[i].Defense, ItemList[i].Visible, 0, zorder);
                     WorldItems.Add(newItem);
                     return WorldItems[WorldItems.Count - 1];
                 }
@@ -631,7 +844,7 @@ namespace Elysian_Fields
             {
                 if (CreatureList[i].ID == ID)
                 {
-                    newCreature = new Creature(CreatureList[i].Name, pos, Players[0].ID, CreatureList[i].Strength, CreatureList[i].Health, Creatures.Count, CreatureList[i].Defense, CreatureList[i].Experience, CreatureList[i].LootList, CreatureList[i].SpriteID);
+                    newCreature = new Creature(CreatureList[i].Name, pos, Players[0].ID, CreatureList[i].MagicStrength, CreatureList[i].Strength, CreatureList[i].Health, Creatures.Count, CreatureList[i].Defense, CreatureList[i].Experience, CreatureList[i].SpriteID, CreatureList[i].LootList, CreatureList[i].Spells);
                     Creatures.Add(newCreature);
                 }
             }
@@ -667,6 +880,52 @@ namespace Elysian_Fields
             if (tileWalkable) { tileWalkable = !OutOfBoundaries(Tile); }
 
             return tileWalkable;
+        }
+
+        internal HashSet<Node> GetBlockedTiles(Node TargetPosition, int MaxDistanceFromPosition = 7)
+        {
+            HashSet<Node> nodes = new HashSet<Node>();
+            for (int i = 0; i < Players.Count; i++)
+            {
+                if (Players[i].Position.Z == TargetPosition.Z && Players[i].Health > 0)
+                {
+                    if (DistanceToDiagonal(Coordinates.Parse(TargetPosition), Players[i].Position) <= MaxDistanceFromPosition)
+                    {
+                        nodes.Add(new Node(Players[i].Position.X, Players[i].Position.Y));
+                    }
+                }
+            }
+            for (int i = 0; i < Creatures.Count; i++)
+            {
+                if (Creatures[i].Position.Z == TargetPosition.Z && Creatures[i].Health > 0)
+                {
+                    if (DistanceToDiagonal(Coordinates.Parse(TargetPosition), Creatures[i].Position) <= MaxDistanceFromPosition)
+                    {
+                        nodes.Add(new Node(Creatures[i].Position.X, Creatures[i].Position.Y));
+                    }
+                }
+            }
+            for (int i = 0; i < NPCs.Count; i++)
+            {
+                if (NPCs[i].Position.Z == TargetPosition.Z)
+                {
+                    if (DistanceToDiagonal(Coordinates.Parse(TargetPosition), NPCs[i].Position) <= MaxDistanceFromPosition)
+                    {
+                        nodes.Add(new Node(NPCs[i].Position.X, NPCs[i].Position.Y));
+                    }
+                }
+            }
+            for (int i = 0; i < Tiles.Count; i++)
+            {
+                if (Tiles[i].Position.Z == TargetPosition.Z)
+                {
+                    if (DistanceToDiagonal(Coordinates.Parse(TargetPosition), Tiles[i].Position) <= MaxDistanceFromPosition && !Tiles[i].Walkable)
+                    {
+                        nodes.Add(new Node(Tiles[i].Position.X, Tiles[i].Position.Y));
+                    }
+                }
+            }
+            return nodes;
         }
 
         internal bool AI_IsTileWalkable(Coordinates Tile)
@@ -759,6 +1018,33 @@ namespace Elysian_Fields
             return CreatureID;
         }
 
+        internal List<Creature> GetCreaturesFromTile(Coordinates Tile)
+        {
+            List<Creature> tile_creatures = new List<Creature>();
+            for (int i = 0; i < Creatures.Count; i++)
+            {
+                if (SamePosition(Tile, Creatures[i].Position) && Creatures[i].Health > 0)
+                {
+                    tile_creatures.Add(Creatures[i]);
+                }
+            }
+            return tile_creatures;
+        }
+
+        internal List<Player> GetPlayersFromTile(Coordinates Tile)
+        {
+            List<Player> tile_players = new List<Player>();
+            for (int i = 0; i < Players.Count; i++)
+            {
+                if (SamePosition(Tile, Players[i].Position) && Players[i].Health > 0)
+                {
+                    tile_players.Add(Players[i]);
+                }
+            }
+            return tile_players;
+        }
+
+
         internal Creature GetCreatureByID(int ID)
         {
             int CreatureID = -1;
@@ -770,7 +1056,7 @@ namespace Elysian_Fields
                     break;
                 }
             }
-            
+
             if (CreatureID == -1)
             {
                 return new Creature("null");
@@ -781,9 +1067,9 @@ namespace Elysian_Fields
         internal Player GetPlayerByID(int ID)
         {
             /* TODO: Change Players[0] to a variable ID to allow for multiplayer */
-            for (int i = 0; i < Players.Count;i++)
+            for (int i = 0; i < Players.Count; i++)
             {
-                if(Players[i].ID == ID)
+                if (Players[i].ID == ID)
                 {
                     return Players[i];
                 }
@@ -813,7 +1099,7 @@ namespace Elysian_Fields
 
         internal bool SamePosition(Coordinates Source, Coordinates Destination, bool CheckZ = true)
         {
-            if(CheckZ)
+            if (CheckZ)
                 return (Source.X == Destination.X && Source.Y == Destination.Y && Source.Z == Destination.Z);
             else
                 return (Source.X == Destination.X && Source.Y == Destination.Y);
@@ -821,9 +1107,9 @@ namespace Elysian_Fields
 
         internal bool TileAbove(Coordinates Position)
         {
-            for(int i = 0; i < Tiles.Count; i++)
+            for (int i = 0; i < Tiles.Count; i++)
             {
-                if(IsAbove(Tiles[i].Position, Position))
+                if (IsAbove(Tiles[i].Position, Position))
                 {
                     return true;
                 }

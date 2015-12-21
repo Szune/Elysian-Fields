@@ -29,8 +29,6 @@ namespace Elysian_Fields
     class Player : Creature
     {
         public Equipment EquippedItems;
-        public int Exhaustion { get; set; }
-        public int ManaSpent { get; set; }
 
         public Player()
         {
@@ -46,7 +44,6 @@ namespace Elysian_Fields
             MaxHealth = health;
             Health = health;
             ID = id;
-            SuperPowerSteps = 0;
             Visible = true;
             EntityType = Entity.PlayerEntity;
             TargetID = -1;
@@ -75,33 +72,6 @@ namespace Elysian_Fields
         public void UnequipItem(string _ItemSlot)
         {
             EquippedItems.UnequipItem(_ItemSlot);
-        }
-
-        public bool IsExhausted(int CurrentTime)
-        {
-            if (CurrentTime - Exhaustion > Spell.ExhaustionTime)
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public bool CastSpell(Spell spell, int CurrentTime)
-        {
-            if (!IsExhausted(CurrentTime) && Mana >= spell.ManaCost)
-            {
-                SpendMana(spell.ManaCost);
-                Exhaustion = CurrentTime;
-                return true;
-            }
-            return false;
-        }
-
-        public void SpendMana(int mana)
-        {
-            Mana -= mana;
-            ManaSpent += mana;
-            if(ManaSpent > Utility.ManaSpentNeededForMagicStrength(MagicStrength)) { MagicStrength += 1; }
         }
     }
 }

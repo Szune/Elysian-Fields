@@ -12,6 +12,12 @@ namespace Elysian_Fields.Modules.AI
 
         private int G = int.Parse(ConfigurationManager.AppSettings["G"]);
 
+        private List<Node> OpenList = new List<Node>(); // Den öppna listan med rutor som vi fortfarande kollar
+        private List<Node> ClosedList = new List<Node>(); // Den stängda listan med rutor som vi inte behöver kolla längre
+        private Node sourcePos = new Node();
+        private Node Destination = new Node();
+        private int maxDistance = 20;
+
         public AI() { }
 
         public AI(Map mapEngine)
@@ -19,47 +25,46 @@ namespace Elysian_Fields.Modules.AI
             map = mapEngine;
         }
 
-        public List<Coordinates> PathTo(Coordinates Target, Coordinates FromCreature)
-        {
-            List<Coordinates> OpenList = new List<Coordinates>(); // Den öppna listan med rutor som vi fortfarande kollar
-            List<Coordinates> ClosedList = new List<Coordinates>(); // Den stängda listan med rutor som vi inte behöver kolla längre
-            Coordinates Parent = FromCreature; // Parent-rutan
-            Coordinates Destination = Target; // Destinationen
+        public List<Node> PathTo(Coordinates Target, Coordinates FromCreature, int _maxDistance = 20)
+        { 
+            //List<Node> OpenList = new List<Node>(); // Den öppna listan med rutor som vi fortfarande kollar
+            //List<Node> ClosedList = new List<Node>(); // Den stängda listan med rutor som vi inte behöver kolla längre
+            Node Parent = new Node(FromCreature.X, FromCreature.Y, FromCreature.Z); // Parent-rutan
+            Destination = new Node(Target.X, Target.Y, Target.Z); // Destinationen
             int tries = 0;
             bool havePath = false;
+            sourcePos = new Node(FromCreature.X, FromCreature.Y,  FromCreature.Z);
+            maxDistance = _maxDistance;
 
             OpenList.Add(Parent); // Lägg till startpunkten
-            OpenList.AddRange(CheckAdjacentSquares(Parent, Parent, Destination, ClosedList, OpenList)); // Lägg till de rutor runtom som går att gå på i den öppna listan
+            //OpenList.AddRange(CheckAdjacentSquares(Parent, Parent, Destination, ClosedList, OpenList)); // Lägg till de rutor runtom som går att gå på i den öppna listan
+            CheckAdjacentSquares(Parent);
             OpenList.Remove(Parent); // Ta bort startpunkten
             ClosedList.Add(Parent); // Lägg till startpunkten i listan med rutor vi inte behöver kolla
 
 
             while (!havePath)
             {
-                if (tries == 4 * 200) { break; }
-                Parent = LowestFScore(OpenList);
+                if (OpenList.Count == 0 && havePath == false) { break; }
+                if (tries == 200) { break; }
+                Parent = LowestFScore();
                 OpenList.Remove(Parent);
                 ClosedList.Add(Parent);
-                OpenList.AddRange(CheckAdjacentSquares(Parent, Parent, Destination, ClosedList, OpenList));
+                CheckAdjacentSquares(Parent);
 
-                if (IsTileInList(Target, ClosedList)) { havePath = true; }
-                if (OpenList.Count == 0 && havePath == false) { break; }
-                tries += 4;
+                if (IsTileInList(Destination, ClosedList)) { havePath = true; }
+                tries += 1;
             }
 
-            List<Coordinates> path = new List<Coordinates>();
-
+            List<Node> path = new List<Node>();
+            
 
             if (havePath)
             {
-                Destination = GetTileInList(Target, ClosedList);
+                Destination = GetTileInList(Destination, ClosedList);
                 path.Add(Destination);
                 while (Destination.hasParent())
                 {
-                    if (bool.Parse(ConfigurationManager.AppSettings["DebugMode"]))
-                    {
-                        //draw.DrawObject(new Entity("F", new Coordinates(Destination.X, Destination.Y)));      // Endast för debugging
-                    }
                     Destination = Destination.Parent;
                     path.Add(Destination);
                 }
@@ -68,46 +73,124 @@ namespace Elysian_Fields.Modules.AI
             return path;
         }
 
-        public List<Coordinates> CheckAdjacentSquares(Coordinates Square, Coordinates Parent, Coordinates Destination, List<Coordinates> ClosedList, List<Coordinates> OpenList)
+        public int DistanceToDiagonal(Node Source, Node Destination)
         {
-            List<Coordinates> WalkableSquares = new List<Coordinates>();
-            
-            Coordinates CheckingSquare = new Coordinates(Square.X + 1, Square.Y, Square.Z); // East
-            if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination))
+            return (int)Math.Sqrt(Math.Pow((Source.X - Destination.X), 2) + Math.Pow(Source.Y - Destination.Y, 2));
+        }
+
+        public void CheckAdjacentSquares(Node Square)
+        {
+
+            Node CheckingSquare = new Node(Square.X + 1, Square.Y, Square.Z); // East
+            CheckSquare(Square, CheckingSquare);
+
+            CheckingSquare = new Node(Square.X - 1, Square.Y, Square.Z); // West
+            CheckSquare(Square, CheckingSquare);
+
+            CheckingSquare = new Node(Square.X, Square.Y - 1, Square.Z); // North
+            CheckSquare(Square, CheckingSquare);
+
+            CheckingSquare = new Node(Square.X, Square.Y + 1, Square.Z); // South
+            CheckSquare(Square, CheckingSquare);
+
+        }
+
+        public void CheckSquare(Node Square, Node CheckingSquare)
+        {
+            Node Parent = Square;
+            Node tmpSquare;
+            if (DistanceToDiagonal(sourcePos, CheckingSquare) < maxDistance)
             {
-                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CheckingSquare.Z, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
-            }
-            
-            CheckingSquare = new Coordinates(Square.X - 1, Square.Y, Square.Z); // West
-            if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination)) {
-                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CheckingSquare.Z, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
+                if (IsTileWalkable(CheckingSquare) || SamePosition(CheckingSquare, Destination))
+                {
+                    tmpSquare = (new Node(CheckingSquare.X, CheckingSquare.Y, CheckingSquare.Z, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
+
+                    if (ConfigurationManager.AppSettings["DebugMode"] == "true")
+                        map.DebugTiles_Pathfinding.Add(new Tile("grass", 1, Coordinates.Parse(CheckingSquare), Coordinates.Parse(CheckingSquare), 0, true));
+
+                    InsertSquareInList(tmpSquare);
+                }
             }
 
-            CheckingSquare = new Coordinates(Square.X, Square.Y - 1, Square.Z); // North
-            if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination)) {
-                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CheckingSquare.Z, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
-            }
-
-            CheckingSquare = new Coordinates(Square.X, Square.Y + 1, Square.Z); // South
-            if (IsTileWalkable(CheckingSquare, ClosedList, OpenList) || SamePosition(CheckingSquare, Destination)) {
-                WalkableSquares.Add(new Coordinates(CheckingSquare.X, CheckingSquare.Y, CheckingSquare.Z, CalculateHeuristic(CheckingSquare, Destination), (G + Parent.G), Parent));
-            }
-
-            return WalkableSquares;
         }
 
-        public bool IsTileWalkable(Coordinates Tile, List<Coordinates> ClosedList, List<Coordinates> OpenList)
+        public bool IsTileWalkable(Node Tile)
         {
-            return (map.IsTileWalkable(Tile) && !IsTileInList(Tile, ClosedList) && !IsTileInList(Tile, OpenList));
+            return (map.IsTileWalkable(Coordinates.Parse(Tile)) && !IsTileInList(Tile, ClosedList) && !IsTileInList(Tile, OpenList));
+        }
+
+        public void InsertSquareInList(Node Square)
+        {
+            // Binary search to find right place to insert square -
+            // so that the list is always sorted
+            if (OpenList.Count > 0)
+            {
+                if(Square.F < OpenList[0].F || Square.F == OpenList[0].F)
+                {
+                    OpenList.Insert(0, Square);
+                    return;
+                }
+                if(Square.F > OpenList[OpenList.Count-1].F || Square.F == OpenList[OpenList.Count-1].F)
+                {
+                    OpenList.Add(Square);
+                    return;
+                }
+                bool inserted = false;
+                int start = OpenList.Count - 1;
+                int last = start;
+                if (OpenList.Count > 1)
+                {
+                    while (!inserted)
+                    {
+                        if (Square.F > OpenList[start - 1].F && Square.F < OpenList[start].F)
+                        {
+                            last = start;
+                            inserted = true;
+                            break;
+                        }
+                        else if (Square.F == OpenList[start - 1].F)
+                        {
+                            last = start;
+                            inserted = true;
+                            break;
+                        }
+                        else if (Square.F == OpenList[start].F)
+                        {
+                            last = start;
+                            inserted = true;
+                            break;
+                        }
+
+                        if (Square.F < OpenList[start].F)
+                        {
+                            last = start;
+                            start = start / 2;
+                            //inserted = true;
+                        }
+                        else if (Square.F > OpenList[start].F)
+                        {
+                            last = start;
+                            start = start + (start / 2);
+                            //inserted = true;
+                        }
+                        else
+                        {
+                            inserted = true;
+                            break;
+                        }
+                    }
+                    OpenList.Insert(last, Square);
+                }
+            }
         }
 
 
-        public int CalculateHeuristic(Coordinates Source, Coordinates Destination)
+        public int CalculateHeuristic(Node Source, Node Destination)
         {
             return (G + (G * (Math.Abs(Source.X - Destination.X) + Math.Abs(Source.Y - Destination.Y)))); // Manhattan-metoden
         }
 
-        public bool IsTileInList(Coordinates Tile, List<Coordinates> List)
+        public bool IsTileInList(Node Tile, List<Node> List)
         {
             bool isClosed = false;
             for (int i = 0; i < List.Count; i++)
@@ -118,39 +201,26 @@ namespace Elysian_Fields.Modules.AI
             return isClosed;
         }
 
-        public Coordinates GetTileInList(Coordinates Tile, List<Coordinates> List)
+        public Node GetTileInList(Node Tile, List<Node> List)
         {
-            Coordinates TileCoordinates = new Coordinates();
+            Node TileNode = new Node();
             for (int i = 0; i < List.Count; i++)
             {
-                if (List[i].X == Tile.X && List[i].Y == Tile.Y) { TileCoordinates = List[i]; break; }
+                if (List[i].X == Tile.X && List[i].Y == Tile.Y) { TileNode = List[i]; break; }
             }
 
-            return TileCoordinates;
+            return TileNode;
         }
 
 
-        public Coordinates LowestFScore(List<Coordinates> OpenList)
+        public Node LowestFScore()
         {
-            Coordinates lowestF = new Coordinates();
-            for (int i = 0; i < OpenList.Count; i++)
-            {
-                if (i == 0)
-                {
-                    lowestF = OpenList[i];
-                }
-                else
-                {
-                    if (OpenList[i].F < lowestF.F)
-                    {
-                        lowestF = OpenList[i];
-                    }
-                }
-            }
+            Node lowestF = new Node();
+            lowestF = OpenList[0];
             return lowestF;
         }
 
-        public bool SamePosition(Coordinates Source, Coordinates Destination)
+        public bool SamePosition(Node Source, Node Destination)
         {
             return (Source.X == Destination.X && Source.Y == Destination.Y);
         }
