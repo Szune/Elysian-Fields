@@ -9,14 +9,82 @@ A 2D game developed using MonoGame
 - [x] Equipment system
 - [x] Saving
 - [x] Loading
+- [x] Scripted spells
+- [x] Loading and saving monsters in map editor and game
+- [x] Loading and saving items in map editor and game
+- [x] Monsters being able to cast spells
 - [ ] Improved pathfinding algorithm
-- [ ] Scripted spells
-- [ ] Loading and saving monsters in map editor and game
-- [ ] Loading and saving items in map editor and game
-- [ ] Monsters being able to cast spells
 - [ ] Random loot system
 
-##Scripted NPCs
+#NPC and spell scripts
+
+##Spell Scripts
+Spells can now be created by simply placing a lua file in the folder "<PathToElysian Fields.exe>\Content\Scripts\Spells"
+These spells can be used by monsters as well as players, depending on how you set up the player UI.
+
+###Example spells
+Heal:
+```
+ID = 2
+Name = 'Heal'
+Damage = 50
+SpriteName = 'Spell_HealSpell'
+Cooldown = 500
+Mana_Cost = 5
+Spell_Heal = true
+Spell_RequireTarget = false
+Spell_Area = false
+```
+
+Area damage spell:
+```
+ID = 1
+Damage = 50
+Name = 'Fist'
+SpriteName = 'Spell_FistSpell'
+Mana_Cost = 20
+Cooldown = 1000
+Spell_Heal = false
+Spell_RequireTarget = false
+Spell_Area = true
+Area = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,
+	0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,
+	0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+```
+
+Area damage spell used by a monster:
+```
+ID = 500
+Damage = 150
+Name = 'DinosaurFire'
+SpriteName = 'Spell_DinosaurFire'
+Mana_Cost = 0
+Cooldown = 4000
+Spell_Heal = false
+Spell_RequireTarget = false
+Spell_Area = true
+Area = {0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,
+	0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,
+	0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,1,0,0,0,0,0,0,0}
+```
+
+##NPC Scripts
 NPCs can now be created by simply placing a lua file in the folder "<PathToElysian Fields.exe>\Content\Scripts\NPCs"
 
 Minimum required fields for a non-talking NPC:
